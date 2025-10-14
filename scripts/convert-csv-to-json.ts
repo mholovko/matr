@@ -127,7 +127,7 @@ function convertCsvToMatRDatabase(): void {
     // Create the complete database object
     const database: MatRGenericDatabase = {
       metadata: {
-        library_name: "Material Registry - Generic Carbon Database",
+        library_name: "Material Register - Generic Carbon Database",
         version: "1.0",
         date_created: "2025-10-14",
         source: "H/BERT Embodied Carbon Library",
@@ -141,7 +141,7 @@ function convertCsvToMatRDatabase(): void {
         },
         linking_key: "material_id",
         notes:
-          "Use material_id to link materials from Revit. All material names prefixed with MatR_ for Material Registry.",
+          "Use material_id to link materials from Revit. All material names prefixed with MatR_ for Material Register.",
       },
       materials,
     };
