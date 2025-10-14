@@ -1,0 +1,15 @@
+{
+  "name": "matr",
+  "version": "1.0.0",
+  "description": "MatR",
+  "scripts": {
+    "convert": "bun run scripts/convert-csv-to-json.ts"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "bun-types": "^1.0.0"
+  }
+}

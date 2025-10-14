@@ -1,0 +1,49 @@
+Material: Name,Material: Density (ton/m3),Material: Waste rate (%),Material: Embodied Carbon (tonCO2/ton),Material: Transport coefficient (%),Material: Construction coefficient (%),Material: End of life coefficient (%),Material: Replacements over 60 years
+HBA_Aggregates and Sand,2.24,0.125,0.00747,0.03,0.07,0.02,0
+HBA_Aluminum (European),2.7,0.05,6.67,0.03,0.07,0.02,0
+HBA_Aluminum (Worldwide),2.7,0.05,13.1,0.03,0.07,0.02,0
+HBA_Asphalt (Road and Pavement),2.1,0.05,0.0542,0.03,0.07,0.02,2
+HBA_Bitumen Emulsion,2.4,0.05,0.222,0.03,0.07,0.02,2
+HBA_Brass,8.5,0.05,2.64,0.03,0.07,0.02,0
+HBA_Brick,1.92,0.2,0.21,0.03,0.07,0.02,0
+HBA_Ceramic Cladding Panels,2.13,0.08,0.78,0.03,0.07,0.02,0
+HBA_Ceramic Tiles,2,0.08,0.78,0.03,0.07,0.02,0
+HBA_Concrete -  Cast In Situ 50% GGBS RC25/30,2.3,0.05,0.072,0.03,0.07,0.02,0
+HBA_Concrete - Cast In Situ 25/30,2.2,0.05,0.119,0.03,0.07,0.02,0
+HBA_Concrete - Precast 40/50,2.2,0.01,0.148,0.03,0.07,0.02,0
+HBA_Concrete - Precast 50% GGBS,2.2,0.01,0.097,0.03,0.07,0.02,0
+HBA_Concrete - Precast Block,2.3,0.2,0.093,0.03,0.07,0.02,0
+HBA_Concrete - Screed,1.9,0.05,0.163,0.03,0.07,0.02,0
+HBA_Concrete in situ - Reinforced RC 25/30,2.3,0.05,0.129,0.03,0.07,0.02,0
+HBA_Concrete Precast - RC 40/50,2.3,0.01,0.178,0.03,0.07,0.02,0
+HBA_Copper,8.6,0.05,2.71,0.03,0.07,0.02,0
+HBA_Glass,2.5,0.05,1.44,0.03,0.07,0.02,2
+HBA_Gypsum Plasterboard,0.8,0.225,0.39,0.03,0.07,0.02,1
+HBA_Insulation - Expanded Polystyrene (EPS),0.015,0.15,3.29,0.03,0.07,0.02,0
+HBA_Insulation - Mineral Wool,0.025,0.15,1.28,0.03,0.07,0.02,0
+HBA_Insulation - Polyurethane Rigid Foam (PUR),0.03,0.15,4.26,0.03,0.07,0.02,0
+HBA_Insulation - Rock Wool,0.023,0.15,1.12,0.03,0.07,0.02,0
+HBA_Marble Tile,2.5,0.1,0.21,0.03,0.07,0.02,0
+HBA_Plaster (Gypsum),1.12,0.05,0.13,0.03,0.07,0.02,1
+HBA_PVC General,1.38,0.05,3.1,0.03,0.07,0.02,1
+HBA_Rammed Soil,1.46,0.1,0.024,0.03,0.07,0.02,0
+HBA_Rubber - Tiles,1.5,0.05,2.85,0.03,0.07,0.02,2
+HBA_Steel cold rolled coil,7.8,0.15,2.73,0.03,0.07,0.02,0
+HBA_Steel electrogalvanized,7.8,0.15,3.03,0.03,0.07,0.02,0
+HBA_Steel Section,7.8,0.15,1.55,0.03,0.07,0.02,0
+HBA_Stone,2.88,0.1,0.079,0.03,0.07,0.02,0
+HBA_Stone Granite,2.88,0.1,0.7,0.03,0.07,0.02,0
+HBA_Stone Limestone,2.18,0.1,0.09,0.03,0.07,0.02,0
+HBA_Stone Sandstone,2.2,0.1,0.06,0.03,0.07,0.02,0
+HBA_Vinyl Flooring,1.39,0.05,3.19,0.03,0.07,0.02,2
+HBA_Wood - CLT,0.5,0.1,0.437,0.03,0.07,0.02,0
+HBA_Wood - Glulam,0.5,0.1,0.512,0.03,0.07,0.02,0
+HBA_Wood - Hardboard,0.6,0.1,0.815,0.03,0.07,0.02,1
+HBA_Wood - Hardwood,0.7,0.1,0.306,0.03,0.07,0.02,1
+HBA_Wood - Hardwood Floor,0.7,0.1,0.306,0.03,0.07,0.02,1
+HBA_Wood - MDF,0.75,0.1,0.856,0.03,0.07,0.02,1
+HBA_Wood - OSB,0.32,0.1,0.455,0.03,0.07,0.02,0
+HBA_Wood - Plywood,0.54,0.1,0.681,0.03,0.07,0.02,1
+HBA_Wood - Softwood,0.55,0.1,0.263,0.03,0.07,0.02,0
+HBA_Wood_Average,0.48,0.1,0.493,0.03,0.07,0.02,1
+HBA_Zinc,7,0.075,3.09,0.03,0.07,0.02,0

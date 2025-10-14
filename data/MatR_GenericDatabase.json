@@ -1,0 +1,883 @@
+{
+  "metadata": {
+    "library_name": "Material Registry - Generic Carbon Database",
+    "version": "1.0",
+    "date_created": "2025-10-14",
+    "source": "H/BERT Embodied Carbon Library",
+    "purpose": "Generic coefficient library for early design and PowerBI calculations",
+    "units": {
+      "carbon": "kgCO2e/kg",
+      "density": "kg/m³",
+      "waste_rate": "decimal (0.05 = 5%)",
+      "coefficients": "decimal percentage of A1-A3"
+    },
+    "linking_key": "material_id",
+    "notes": "Use material_id to link materials from Revit. All material names prefixed with MatR_ for Material Registry."
+  },
+  "materials": [
+    {
+      "material_id": "MatR_Aggregates_and_Sand",
+      "name": "HBA_Aggregates and Sand",
+      "category": "Aggregates and Sand",
+      "subcategory": "",
+      "density_kg_per_m3": 2240,
+      "carbon_data": {
+        "a1_a3": 0.00747,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.125
+      }
+    },
+    {
+      "material_id": "MatR_Aluminum_European",
+      "name": "HBA_Aluminum (European)",
+      "category": "Aluminum (European)",
+      "subcategory": "",
+      "density_kg_per_m3": 2700,
+      "carbon_data": {
+        "a1_a3": 6.67,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Aluminum_Worldwide",
+      "name": "HBA_Aluminum (Worldwide)",
+      "category": "Aluminum (Worldwide)",
+      "subcategory": "",
+      "density_kg_per_m3": 2700,
+      "carbon_data": {
+        "a1_a3": 13.1,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Asphalt_Road_and_Pavement",
+      "name": "HBA_Asphalt (Road and Pavement)",
+      "category": "Asphalt (Road and Pavement)",
+      "subcategory": "",
+      "density_kg_per_m3": 2100,
+      "carbon_data": {
+        "a1_a3": 0.0542,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 20,
+        "replacements_60yr": 2,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Bitumen_Emulsion",
+      "name": "HBA_Bitumen Emulsion",
+      "category": "Bitumen Emulsion",
+      "subcategory": "",
+      "density_kg_per_m3": 2400,
+      "carbon_data": {
+        "a1_a3": 0.222,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 20,
+        "replacements_60yr": 2,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Brass",
+      "name": "HBA_Brass",
+      "category": "Brass",
+      "subcategory": "",
+      "density_kg_per_m3": 8500,
+      "carbon_data": {
+        "a1_a3": 2.64,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Brick",
+      "name": "HBA_Brick",
+      "category": "Brick",
+      "subcategory": "",
+      "density_kg_per_m3": 1920,
+      "carbon_data": {
+        "a1_a3": 0.21,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.2
+      }
+    },
+    {
+      "material_id": "MatR_Ceramic_Cladding_Panels",
+      "name": "HBA_Ceramic Cladding Panels",
+      "category": "Ceramic Cladding Panels",
+      "subcategory": "",
+      "density_kg_per_m3": 2130,
+      "carbon_data": {
+        "a1_a3": 0.78,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.08
+      }
+    },
+    {
+      "material_id": "MatR_Ceramic_Tiles",
+      "name": "HBA_Ceramic Tiles",
+      "category": "Ceramic Tiles",
+      "subcategory": "",
+      "density_kg_per_m3": 2000,
+      "carbon_data": {
+        "a1_a3": 0.78,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.08
+      }
+    },
+    {
+      "material_id": "MatR_Concrete__Cast_In_Situ_50_GGBS_RC2530",
+      "name": "HBA_Concrete -  Cast In Situ 50% GGBS RC25/30",
+      "category": "Concrete",
+      "subcategory": " Cast In Situ 50% GGBS RC25/30",
+      "density_kg_per_m3": 2300,
+      "carbon_data": {
+        "a1_a3": 0.072,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Concrete__Cast_In_Situ_2530",
+      "name": "HBA_Concrete - Cast In Situ 25/30",
+      "category": "Concrete",
+      "subcategory": "Cast In Situ 25/30",
+      "density_kg_per_m3": 2200,
+      "carbon_data": {
+        "a1_a3": 0.119,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Concrete__Precast_4050",
+      "name": "HBA_Concrete - Precast 40/50",
+      "category": "Concrete",
+      "subcategory": "Precast 40/50",
+      "density_kg_per_m3": 2200,
+      "carbon_data": {
+        "a1_a3": 0.148,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.01
+      }
+    },
+    {
+      "material_id": "MatR_Concrete__Precast_50_GGBS",
+      "name": "HBA_Concrete - Precast 50% GGBS",
+      "category": "Concrete",
+      "subcategory": "Precast 50% GGBS",
+      "density_kg_per_m3": 2200,
+      "carbon_data": {
+        "a1_a3": 0.097,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.01
+      }
+    },
+    {
+      "material_id": "MatR_Concrete__Precast_Block",
+      "name": "HBA_Concrete - Precast Block",
+      "category": "Concrete",
+      "subcategory": "Precast Block",
+      "density_kg_per_m3": 2300,
+      "carbon_data": {
+        "a1_a3": 0.093,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.2
+      }
+    },
+    {
+      "material_id": "MatR_Concrete__Screed",
+      "name": "HBA_Concrete - Screed",
+      "category": "Concrete",
+      "subcategory": "Screed",
+      "density_kg_per_m3": 1900,
+      "carbon_data": {
+        "a1_a3": 0.163,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Concrete_in_situ__Reinforced_RC_2530",
+      "name": "HBA_Concrete in situ - Reinforced RC 25/30",
+      "category": "Concrete in situ",
+      "subcategory": "Reinforced RC 25/30",
+      "density_kg_per_m3": 2300,
+      "carbon_data": {
+        "a1_a3": 0.129,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Concrete_Precast__RC_4050",
+      "name": "HBA_Concrete Precast - RC 40/50",
+      "category": "Concrete Precast",
+      "subcategory": "RC 40/50",
+      "density_kg_per_m3": 2300,
+      "carbon_data": {
+        "a1_a3": 0.178,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.01
+      }
+    },
+    {
+      "material_id": "MatR_Copper",
+      "name": "HBA_Copper",
+      "category": "Copper",
+      "subcategory": "",
+      "density_kg_per_m3": 8600,
+      "carbon_data": {
+        "a1_a3": 2.71,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Glass",
+      "name": "HBA_Glass",
+      "category": "Glass",
+      "subcategory": "",
+      "density_kg_per_m3": 2500,
+      "carbon_data": {
+        "a1_a3": 1.44,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 20,
+        "replacements_60yr": 2,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Gypsum_Plasterboard",
+      "name": "HBA_Gypsum Plasterboard",
+      "category": "Gypsum Plasterboard",
+      "subcategory": "",
+      "density_kg_per_m3": 800,
+      "carbon_data": {
+        "a1_a3": 0.39,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.225
+      }
+    },
+    {
+      "material_id": "MatR_Insulation__Expanded_Polystyrene_EPS",
+      "name": "HBA_Insulation - Expanded Polystyrene (EPS)",
+      "category": "Insulation",
+      "subcategory": "Expanded Polystyrene (EPS)",
+      "density_kg_per_m3": 15,
+      "carbon_data": {
+        "a1_a3": 3.29,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.15
+      }
+    },
+    {
+      "material_id": "MatR_Insulation__Mineral_Wool",
+      "name": "HBA_Insulation - Mineral Wool",
+      "category": "Insulation",
+      "subcategory": "Mineral Wool",
+      "density_kg_per_m3": 25,
+      "carbon_data": {
+        "a1_a3": 1.28,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.15
+      }
+    },
+    {
+      "material_id": "MatR_Insulation__Polyurethane_Rigid_Foam_PUR",
+      "name": "HBA_Insulation - Polyurethane Rigid Foam (PUR)",
+      "category": "Insulation",
+      "subcategory": "Polyurethane Rigid Foam (PUR)",
+      "density_kg_per_m3": 30,
+      "carbon_data": {
+        "a1_a3": 4.26,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.15
+      }
+    },
+    {
+      "material_id": "MatR_Insulation__Rock_Wool",
+      "name": "HBA_Insulation - Rock Wool",
+      "category": "Insulation",
+      "subcategory": "Rock Wool",
+      "density_kg_per_m3": 23,
+      "carbon_data": {
+        "a1_a3": 1.12,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.15
+      }
+    },
+    {
+      "material_id": "MatR_Marble_Tile",
+      "name": "HBA_Marble Tile",
+      "category": "Marble Tile",
+      "subcategory": "",
+      "density_kg_per_m3": 2500,
+      "carbon_data": {
+        "a1_a3": 0.21,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Plaster_Gypsum",
+      "name": "HBA_Plaster (Gypsum)",
+      "category": "Plaster (Gypsum)",
+      "subcategory": "",
+      "density_kg_per_m3": 1120,
+      "carbon_data": {
+        "a1_a3": 0.13,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_PVC_General",
+      "name": "HBA_PVC General",
+      "category": "PVC General",
+      "subcategory": "",
+      "density_kg_per_m3": 1380,
+      "carbon_data": {
+        "a1_a3": 3.1,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Rammed_Soil",
+      "name": "HBA_Rammed Soil",
+      "category": "Rammed Soil",
+      "subcategory": "",
+      "density_kg_per_m3": 1460,
+      "carbon_data": {
+        "a1_a3": 0.024,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Rubber__Tiles",
+      "name": "HBA_Rubber - Tiles",
+      "category": "Rubber",
+      "subcategory": "Tiles",
+      "density_kg_per_m3": 1500,
+      "carbon_data": {
+        "a1_a3": 2.85,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 20,
+        "replacements_60yr": 2,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Steel_cold_rolled_coil",
+      "name": "HBA_Steel cold rolled coil",
+      "category": "Steel cold rolled coil",
+      "subcategory": "",
+      "density_kg_per_m3": 7800,
+      "carbon_data": {
+        "a1_a3": 2.73,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.15
+      }
+    },
+    {
+      "material_id": "MatR_Steel_electrogalvanized",
+      "name": "HBA_Steel electrogalvanized",
+      "category": "Steel electrogalvanized",
+      "subcategory": "",
+      "density_kg_per_m3": 7800,
+      "carbon_data": {
+        "a1_a3": 3.03,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.15
+      }
+    },
+    {
+      "material_id": "MatR_Steel_Section",
+      "name": "HBA_Steel Section",
+      "category": "Steel Section",
+      "subcategory": "",
+      "density_kg_per_m3": 7800,
+      "carbon_data": {
+        "a1_a3": 1.55,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.15
+      }
+    },
+    {
+      "material_id": "MatR_Stone",
+      "name": "HBA_Stone",
+      "category": "Stone",
+      "subcategory": "",
+      "density_kg_per_m3": 2880,
+      "carbon_data": {
+        "a1_a3": 0.079,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Stone_Granite",
+      "name": "HBA_Stone Granite",
+      "category": "Stone Granite",
+      "subcategory": "",
+      "density_kg_per_m3": 2880,
+      "carbon_data": {
+        "a1_a3": 0.7,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Stone_Limestone",
+      "name": "HBA_Stone Limestone",
+      "category": "Stone Limestone",
+      "subcategory": "",
+      "density_kg_per_m3": 2180,
+      "carbon_data": {
+        "a1_a3": 0.09,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Stone_Sandstone",
+      "name": "HBA_Stone Sandstone",
+      "category": "Stone Sandstone",
+      "subcategory": "",
+      "density_kg_per_m3": 2200,
+      "carbon_data": {
+        "a1_a3": 0.06,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Vinyl_Flooring",
+      "name": "HBA_Vinyl Flooring",
+      "category": "Vinyl Flooring",
+      "subcategory": "",
+      "density_kg_per_m3": 1390,
+      "carbon_data": {
+        "a1_a3": 3.19,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 20,
+        "replacements_60yr": 2,
+        "waste_factor": 0.05
+      }
+    },
+    {
+      "material_id": "MatR_Wood__CLT",
+      "name": "HBA_Wood - CLT",
+      "category": "Wood",
+      "subcategory": "CLT",
+      "density_kg_per_m3": 500,
+      "carbon_data": {
+        "a1_a3": 0.437,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__Glulam",
+      "name": "HBA_Wood - Glulam",
+      "category": "Wood",
+      "subcategory": "Glulam",
+      "density_kg_per_m3": 500,
+      "carbon_data": {
+        "a1_a3": 0.512,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__Hardboard",
+      "name": "HBA_Wood - Hardboard",
+      "category": "Wood",
+      "subcategory": "Hardboard",
+      "density_kg_per_m3": 600,
+      "carbon_data": {
+        "a1_a3": 0.815,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__Hardwood",
+      "name": "HBA_Wood - Hardwood",
+      "category": "Wood",
+      "subcategory": "Hardwood",
+      "density_kg_per_m3": 700,
+      "carbon_data": {
+        "a1_a3": 0.306,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__Hardwood_Floor",
+      "name": "HBA_Wood - Hardwood Floor",
+      "category": "Wood",
+      "subcategory": "Hardwood Floor",
+      "density_kg_per_m3": 700,
+      "carbon_data": {
+        "a1_a3": 0.306,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__MDF",
+      "name": "HBA_Wood - MDF",
+      "category": "Wood",
+      "subcategory": "MDF",
+      "density_kg_per_m3": 750,
+      "carbon_data": {
+        "a1_a3": 0.856,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__OSB",
+      "name": "HBA_Wood - OSB",
+      "category": "Wood",
+      "subcategory": "OSB",
+      "density_kg_per_m3": 320,
+      "carbon_data": {
+        "a1_a3": 0.455,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__Plywood",
+      "name": "HBA_Wood - Plywood",
+      "category": "Wood",
+      "subcategory": "Plywood",
+      "density_kg_per_m3": 540,
+      "carbon_data": {
+        "a1_a3": 0.681,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood__Softwood",
+      "name": "HBA_Wood - Softwood",
+      "category": "Wood",
+      "subcategory": "Softwood",
+      "density_kg_per_m3": 550,
+      "carbon_data": {
+        "a1_a3": 0.263,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Wood_Average",
+      "name": "HBA_Wood_Average",
+      "category": "Wood_Average",
+      "subcategory": "",
+      "density_kg_per_m3": 480,
+      "carbon_data": {
+        "a1_a3": 0.493,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 30,
+        "replacements_60yr": 1,
+        "waste_factor": 0.1
+      }
+    },
+    {
+      "material_id": "MatR_Zinc",
+      "name": "HBA_Zinc",
+      "category": "Zinc",
+      "subcategory": "",
+      "density_kg_per_m3": 7000,
+      "carbon_data": {
+        "a1_a3": 3.09,
+        "a4_percent": 0.03,
+        "a5_percent": 0.07,
+        "c1_c4_percent": 0.02
+      },
+      "life_cycle_data": {
+        "service_life_years": 60,
+        "replacements_60yr": 0,
+        "waste_factor": 0.075
+      }
+    }
+  ]
+}
