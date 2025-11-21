@@ -16,6 +16,7 @@ interface SpeckleModelProps {
 
 export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
+    const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
     const { setSelectedElement, setLoading, selectedElementId } = useAppStore()
     const { camera, controls } = useThree()
 
@@ -82,6 +83,18 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
         load()
     }, [projectId, modelId, setLoading])
 
+    // Enable pointer events on meshes after scene is loaded
+    useEffect(() => {
+        if (!sceneGroup) return
+
+        sceneGroup.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                // Enable raycasting for this mesh
+                child.raycast = THREE.Mesh.prototype.raycast
+            }
+        })
+    }, [sceneGroup])
+
     // Camera Fitting Effect
     useEffect(() => {
         if (!sceneGroup || !controls) return
@@ -116,16 +129,32 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
         return () => clearTimeout(timer)
     }, [sceneGroup, controls, camera])
 
-    // Interaction Handler
-    const handleClick = (e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation()
-        // We attached metadata to userData in the converter
-        const data = e.object.userData
+    // Interaction Handlers - distinguish between click and drag
+    const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+        setPointerDown({ x: e.clientX, y: e.clientY })
+    }
 
-        // If we clicked a mesh, we want its PARENT (the Wall), not the mesh itself
-        const elementId = data.parentId || data.id
+    const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
+        if (!pointerDown) return
 
-        setSelectedElement(elementId, data.properties)
+        // Calculate how much the pointer moved
+        const deltaX = Math.abs(e.clientX - pointerDown.x)
+        const deltaY = Math.abs(e.clientY - pointerDown.y)
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+
+        // Only treat as a click if movement is less than 5 pixels
+        if (distance < 5) {
+            e.stopPropagation()
+            // We attached metadata to userData in the converter
+            const data = e.object.userData
+
+            // If we clicked a mesh, we want its PARENT (the Wall), not the mesh itself
+            const elementId = data.parentId || data.id
+
+            setSelectedElement(elementId, data.properties)
+        }
+
+        setPointerDown(null)
     }
 
 
@@ -149,7 +178,8 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
     return (
         <primitive
             object={sceneGroup}
-            onClick={handleClick}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
             rotation={[-Math.PI / 2, 0, 0]} // Revit Z-up adjustment
         />
     )
