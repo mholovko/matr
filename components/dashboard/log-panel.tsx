@@ -49,14 +49,16 @@ export function LogPanel() {
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                         {/* Tabs */}
                         <div className="grid grid-cols-3 border-b border-border">
-                            {[
-                                { id: "materials", label: "MATS", icon: Box },
-                                { id: "carbon", label: "CO2e", icon: Activity },
-                                { id: "docs", label: "DOCS", icon: Layers },
-                            ].map((tab) => (
+                            {(
+                                [
+                                    { id: "materials", label: "MATS", icon: Box },
+                                    { id: "carbon", label: "CO2e", icon: Activity },
+                                    { id: "docs", label: "DOCS", icon: Layers },
+                                ] as const
+                            ).map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id as any)}
+                                    onClick={() => setActiveTab(tab.id)}
                                     className={cn(
                                         "flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors border-r border-border last:border-r-0",
                                         activeTab === tab.id
