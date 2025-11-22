@@ -52,6 +52,10 @@ interface AppState {
     // Camera Debug (dev mode)
     cameraDebugInfo: { position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } } | null
     setCameraDebugInfo: (info: { position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } }) => void
+
+    // Mobile Drawer
+    mobileDrawerSnap: number | string | null
+    setMobileDrawerSnap: (snap: number | string | null) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -84,6 +88,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     cameraDebugInfo: null,
     setCameraDebugInfo: (info) => set({ cameraDebugInfo: info }),
+
+    mobileDrawerSnap: 0.5,
+    setMobileDrawerSnap: (snap) => set({ mobileDrawerSnap: snap }),
 
     setSelectedElement: (id, data) => set({
         selectedElementId: id,

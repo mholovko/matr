@@ -32,6 +32,7 @@
     "regenerator-runtime": "^0.14.1",
     "tailwind-merge": "^3.4.0",
     "three": "^0.181.2",
+    "vaul": "^1.1.2",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
