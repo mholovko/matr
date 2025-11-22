@@ -1,12 +1,12 @@
 "use client"
-import { ChevronsRight, Box, Layers, Activity } from "lucide-react"
+import { ChevronsRight, Box, Layers, Activity, ArrowLeft } from "lucide-react"
 import { useAppStore } from "@/lib/store"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { FilterControls } from "./filter-controls"
 
 export function LogPanel() {
-    const { selectedElementId, selectedElementData } = useAppStore()
+    const { selectedElementId, selectedElementData, setSelectedElement } = useAppStore()
     const [activeTab, setActiveTab] = useState<"materials" | "carbon" | "docs">("materials")
     const [isCollapsed, setIsCollapsed] = useState(false)
 
@@ -85,6 +85,13 @@ export function LogPanel() {
                         <>
                             {/* Element Info */}
                             <div className="p-3 bg-muted/5 border-b border-border">
+                                <button
+                                    onClick={() => setSelectedElement(null)}
+                                    className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-3 group"
+                                >
+                                    <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
+                                    Back to Inventory
+                                </button>
                                 <div className="space-y-2">
                                     <div className="text-sm font-bold text-foreground">{elementName}</div>
                                     <div className="grid grid-cols-2 gap-2 text-[10px] uppercase tracking-wider">

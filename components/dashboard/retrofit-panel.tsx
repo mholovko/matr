@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronsRight, Calendar, DollarSign, Activity, Layers, ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronsRight, Calendar, DollarSign, Activity, Layers, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { retrofitScopes, type RetrofitScope, type DesignScenario } from "@/lib/data/scopes"
 import { useAppStore } from "@/lib/store"
@@ -77,6 +77,17 @@ export function RetrofitPanel() {
                         <div>
                             {/* Status & Description */}
                             <div className="p-4 border-b border-border">
+                                <button
+                                    onClick={() => {
+                                        setSelectedRetrofitScope(null)
+                                        setExpandedScenarios(false)
+                                    }}
+                                    className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-4 group"
+                                >
+                                    <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
+                                    Back to Scopes
+                                </button>
+
                                 <div className="flex items-center gap-2 mb-3">
                                     <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedScope.status))} />
                                     <span className="text-xs font-bold uppercase tracking-wider text-foreground">{selectedScope.status.replace('-', ' ')}</span>
@@ -216,18 +227,6 @@ export function RetrofitPanel() {
                                 </section>
                             )}
 
-                            {/* Back button */}
-                            <div className="p-4 border-t border-border">
-                                <button
-                                    onClick={() => {
-                                        setSelectedRetrofitScope(null)
-                                        setExpandedScenarios(false)
-                                    }}
-                                    className="w-full text-xs font-bold uppercase tracking-wider text-primary hover:underline"
-                                >
-                                    ← Back to all scopes
-                                </button>
-                            </div>
                         </div>
                     ) : (
                         // SCOPES LIST

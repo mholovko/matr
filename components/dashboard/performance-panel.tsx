@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronsRight, Activity, Wind, Droplets, Thermometer } from "lucide-react"
+import { ChevronsRight, Activity, Wind, Droplets, Thermometer, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { roomPerformanceData, type RoomPerformanceData } from "@/lib/data/performance"
 
@@ -54,6 +54,13 @@ export function PerformancePanel() {
                             {/* CO2 Metric */}
                             <section>
                                 <div className="p-3 bg-muted/5 border-b border-border">
+                                    <button
+                                        onClick={() => setSelectedRoom(null)}
+                                        className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-3 group"
+                                    >
+                                        <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
+                                        Back to Rooms
+                                    </button>
                                     <div className="flex items-center gap-2">
                                         <Activity className="h-3 w-3 text-muted-foreground" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Carbon</span>
@@ -148,15 +155,6 @@ export function PerformancePanel() {
                                 </div>
                             </div>
 
-                            {/* Back button */}
-                            <div className="p-4 border-t border-border">
-                                <button
-                                    onClick={() => setSelectedRoom(null)}
-                                    className="w-full text-xs font-bold uppercase tracking-wider text-primary hover:underline"
-                                >
-                                    ← Back to all rooms
-                                </button>
-                            </div>
                         </div>
                     ) : (
                         // ROOM LIST
