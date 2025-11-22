@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { type FeedEvent } from "@/lib/data/feed"
 import { useAppStore } from "@/lib/store"
 import { useRouter } from "next/navigation"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 
 interface FeedItemProps {
     event: FeedEvent
@@ -103,6 +104,39 @@ export function FeedItem({ event, showRelatedScope = true, isLast = false }: Fee
                             </button>
                         )}
                     </div>
+
+                    {/* Attachments (Images) */}
+                    {event.attachments && event.attachments.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {event.attachments.map((attachment, index) => {
+                                if (attachment.type === 'image') {
+                                    return (
+                                        <Dialog key={index}>
+                                            <DialogTrigger asChild>
+                                                <div className="relative h-16 w-16 cursor-pointer overflow-hidden rounded-md border border-border hover:opacity-90 transition-opacity">
+                                                    <img
+                                                        src={attachment.url}
+                                                        alt={attachment.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                </div>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-transparent border-none shadow-none">
+                                                <div className="relative w-full h-full flex items-center justify-center">
+                                                    <img
+                                                        src={attachment.url}
+                                                        alt={attachment.name}
+                                                        className="max-h-[85vh] max-w-full rounded-lg shadow-2xl"
+                                                    />
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+                                    )
+                                }
+                                return null
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

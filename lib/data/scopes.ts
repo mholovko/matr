@@ -32,7 +32,7 @@ export const retrofitScopes: RetrofitScope[] = [
     {
         id: 'wall-stucco',
         title: 'Wall Stucco Replacement',
-        description: 'Remove existing damaged stucco and replace with lime-based breathable render',
+        description: 'Internal wall stucco replacement for specific room.',
         category: 'walls',
         status: 'in-progress',
         timeline: {

@@ -20,9 +20,16 @@ export const feedEvents: FeedEvent[] = [
         date: '2025-11-22',
         type: 'construction',
         title: 'Wall Stucco Removal Progress',
-        description: 'Continued removal of damaged stucco from front facade. Exposed solid brick wall shows minimal damage. No insulation found as expected.',
+        description: 'Internal wall stucco replacement for specific room.',
         relatedScope: 'wall-stucco',
-        relatedElements: ['wall-external-front']
+        relatedElements: ['wall-external-front'],
+        attachments: [
+            {
+                type: 'image',
+                url: '/images/stucco-removal.jpg',
+                name: 'Stucco Removal'
+            }
+        ]
     },
     {
         id: 'event-002',
