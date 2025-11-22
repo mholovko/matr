@@ -17,7 +17,7 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId } = useAppStore()
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore()
     const { camera, controls } = useThree()
 
     useEffect(() => {
@@ -30,10 +30,16 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
 
                 // 2. Traverse & Convert
                 const container = new THREE.Group()
+                const allElements: SpeckleObject[] = []
                 let meshCount = 0
 
                 // Helper to recursively parse the tree
                 const traverse = (obj: any) => {
+                    // Collect element if it has properties (is a building element)
+                    if (obj.id && obj.properties) {
+                        allElements.push(obj)
+                    }
+
                     // Convert current object if it has display geometry
                     const meshGroup = convertSpeckleObject(obj)
                     if (meshGroup) {
@@ -59,6 +65,10 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
 
                 traverse(root)
                 console.log(`Created ${meshCount} mesh groups. Container has ${container.children.length} children.`)
+                console.log(`Collected ${allElements.length} building elements`)
+
+                // Store all elements in the app state
+                setModelElements(allElements)
 
                 // Handle Units (Simple heuristic for now)
                 // Calculate initial bounds to check size
@@ -81,7 +91,7 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
         }
 
         load()
-    }, [projectId, modelId, setLoading])
+    }, [projectId, modelId, setLoading, setModelElements])
 
     // Enable pointer events on meshes after scene is loaded
     useEffect(() => {
@@ -94,6 +104,72 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
             }
         })
     }, [sceneGroup])
+
+    // Apply filters to show/hide elements
+    useEffect(() => {
+        if (!sceneGroup) return
+
+        const hasFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
+
+        console.log("Applying filters:", filters)
+        console.log("Has filters:", hasFilters)
+
+        let visibleCount = 0
+        let hiddenCount = 0
+
+        sceneGroup.traverse((child) => {
+            // Check if this is a Group with element data (not a mesh)
+            if (child instanceof THREE.Group && child.userData.id && child.userData.properties) {
+                const element = child.userData
+
+                // Get element category, level, and group
+                const category = element.category || element.properties?.builtInCategory?.replace("OST_", "")
+                const level = element.level || element.properties?.Parameters?.["Instance Parameters"]?.Constraints?.["Base Constraint"]?.value
+                const groupName = element.properties?.groupName
+
+                // If no filters active, show everything
+                if (!hasFilters) {
+                    child.visible = true
+                    // Enable raycasting for all meshes in this group
+                    child.traverse((c) => {
+                        if (c instanceof THREE.Mesh) {
+                            c.raycast = THREE.Mesh.prototype.raycast
+                        }
+                    })
+                    visibleCount++
+                    return
+                }
+
+                // Check if element matches filters
+                let matchesCategory = filters.categories.length === 0 || filters.categories.includes(category)
+                let matchesLevel = filters.levels.length === 0 || filters.levels.includes(level)
+                let matchesGroup = filters.groups.length === 0 || filters.groups.includes(groupName)
+
+                // Element is visible if it matches all active filter types
+                child.visible = matchesCategory && matchesLevel && matchesGroup
+
+                // Disable/enable raycasting based on visibility
+                child.traverse((c) => {
+                    if (c instanceof THREE.Mesh) {
+                        if (child.visible) {
+                            c.raycast = THREE.Mesh.prototype.raycast
+                        } else {
+                            // Disable raycasting for invisible elements
+                            c.raycast = () => { }
+                        }
+                    }
+                })
+
+                if (child.visible) {
+                    visibleCount++
+                } else {
+                    hiddenCount++
+                }
+            }
+        })
+
+        console.log(`Filtering complete: ${visibleCount} visible, ${hiddenCount} hidden`)
+    }, [sceneGroup, filters])
 
     // Camera Fitting Effect
     useEffect(() => {
@@ -145,13 +221,31 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
         // Only treat as a click if movement is less than 5 pixels
         if (distance < 5) {
             e.stopPropagation()
+
+            // Debug logging
+            console.log("=== SELECTED MESH ===")
+            console.log("Mesh object:", e.object)
+            console.log("Mesh userData:", e.object.userData)
+            console.log("Full event:", e)
+
             // We attached metadata to userData in the converter
             const data = e.object.userData
 
             // If we clicked a mesh, we want its PARENT (the Wall), not the mesh itself
             const elementId = data.parentId || data.id
 
-            setSelectedElement(elementId, data.properties)
+            // Reconstruct the full element object from userData
+            const fullElement = data.fullElement || {
+                id: elementId,
+                speckle_type: data.speckleType,
+                properties: data.properties,
+                ...data
+            }
+
+            console.log("Full element being passed to store:", fullElement)
+
+            // Pass the complete element data
+            setSelectedElement(elementId, fullElement)
         }
 
         setPointerDown(null)
@@ -176,11 +270,12 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
     if (!sceneGroup) return null
 
     return (
-        <primitive
-            object={sceneGroup}
+        <group
+            rotation={[-Math.PI / 2, 0, 0]} // Revit Z-up adjustment
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
-            rotation={[-Math.PI / 2, 0, 0]} // Revit Z-up adjustment
-        />
+        >
+            <primitive object={sceneGroup} />
+        </group>
     )
 }

@@ -81,7 +81,8 @@ export function convertSpeckleObject(obj: SpeckleObject): THREE.Object3D | null 
                 mesh.userData = {
                     parentId: obj.id, // The "Wall" ID, not the mesh ID
                     speckleType: obj.speckle_type,
-                    properties: obj.properties || obj
+                    properties: obj.properties || obj,
+                    fullElement: obj // Store the complete element for selection
                 }
                 group.add(mesh)
             }
