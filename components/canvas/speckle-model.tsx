@@ -14,9 +14,10 @@ interface SpeckleModelProps {
     modelId: string
     visible?: boolean
     renderBackFaces?: boolean
+    enableFiltering?: boolean
 }
 
-export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false }: SpeckleModelProps) {
+export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
     const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore()
@@ -155,8 +156,10 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 const level = element.level || element.properties?.Parameters?.["Instance Parameters"]?.Constraints?.["Base Constraint"]?.value
                 const groupName = element.properties?.groupName
 
-                // If no filters active, show everything
-                if (!hasFilters) {
+                const isHidden = element.properties?.isHidden // Check for explicit hidden state if we add that later
+
+                // If no filters active OR filtering is disabled, show everything
+                if (!hasFilters || !enableFiltering) {
                     child.visible = true
                     // Enable raycasting for all meshes in this group
                     child.traverse((c) => {
@@ -197,7 +200,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         })
 
         console.log(`Filtering complete: ${visibleCount} visible, ${hiddenCount} hidden`)
-    }, [sceneGroup, filters, renderBackFaces])
+    }, [sceneGroup, filters, renderBackFaces, enableFiltering])
 
     // Camera Fitting Effect
     useEffect(() => {
