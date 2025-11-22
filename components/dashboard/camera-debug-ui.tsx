@@ -8,7 +8,7 @@ export function CameraDebugUI() {
     const { cameraDebugInfo } = useAppStore()
     const [copied, setCopied] = useState(false)
 
-    if (!cameraDebugInfo) return null
+    if (process.env.NODE_ENV !== 'development' || !cameraDebugInfo) return null
 
     const { position, target } = cameraDebugInfo
 
