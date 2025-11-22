@@ -15,9 +15,10 @@ interface SpeckleModelProps {
     visible?: boolean
     renderBackFaces?: boolean
     enableFiltering?: boolean
+    enableSelection?: boolean
 }
 
-export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true }: SpeckleModelProps) {
+export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
     const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore()
@@ -242,7 +243,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
     }
 
     const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
-        if (!pointerDown) return
+        if (!pointerDown || !enableSelection) return
 
         // Calculate how much the pointer moved
         const deltaX = Math.abs(e.clientX - pointerDown.x)
@@ -289,14 +290,15 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         if (!sceneGroup) return
         sceneGroup.traverse((child) => {
             if (child instanceof THREE.Mesh) {
-                const isSelected = child.userData.parentId === selectedElementId
+                // Only highlight if selection is enabled AND it matches the selected ID
+                const isSelected = enableSelection && child.userData.parentId === selectedElementId
                     // Reset color or highlight
                     ; (child.material as THREE.MeshStandardMaterial).color.set(
                         isSelected ? '#3b82f6' : '#e2e8f0'
                     )
             }
         })
-    }, [selectedElementId, sceneGroup])
+    }, [selectedElementId, sceneGroup, enableSelection])
 
     if (!sceneGroup) return null
 

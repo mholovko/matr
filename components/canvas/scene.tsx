@@ -14,9 +14,10 @@ import { useAppStore } from '@/lib/store'
 interface SceneProps {
     modelType: 'elements' | 'rooms'
     enableFiltering?: boolean
+    enableSelection?: boolean
 }
 
-export function Scene({ modelType = 'elements', enableFiltering = true }: SceneProps) {
+export function Scene({ modelType = 'elements', enableFiltering = true, enableSelection = true }: SceneProps) {
     const { setSelectedElement } = useAppStore()
 
     const projectId = process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID
@@ -43,6 +44,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true }: SceneP
                                 modelId={elementsModelId}
                                 visible={modelType === 'elements'}
                                 enableFiltering={enableFiltering}
+                                enableSelection={enableSelection}
                             />
                         )}
 
@@ -53,6 +55,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true }: SceneP
                                 modelId={roomsModelId}
                                 visible={modelType === 'rooms'}
                                 renderBackFaces={true}
+                                enableSelection={enableSelection}
                             />
                         )}
                     </>
