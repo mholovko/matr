@@ -71,6 +71,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                                 modelId={roomsModelId}
                                 visible={modelType === 'rooms'}
                                 renderBackFaces={true}
+                                enableFiltering={enableFiltering}
                                 enableSelection={enableSelection}
                             />
                         )}
