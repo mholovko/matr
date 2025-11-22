@@ -50,6 +50,7 @@ export function Scene({ modelType = 'elements' }: SceneProps) {
                                 projectId={projectId}
                                 modelId={roomsModelId}
                                 visible={modelType === 'rooms'}
+                                renderBackFaces={true}
                             />
                         )}
                     </>

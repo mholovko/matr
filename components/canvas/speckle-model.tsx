@@ -13,9 +13,10 @@ interface SpeckleModelProps {
     projectId: string
     modelId: string
     visible?: boolean
+    renderBackFaces?: boolean
 }
 
-export function SpeckleModel({ projectId, modelId, visible = true }: SpeckleModelProps) {
+export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
     const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore()
@@ -121,9 +122,20 @@ export function SpeckleModel({ projectId, modelId, visible = true }: SpeckleMode
         })
     }, [sceneGroup])
 
-    // Apply filters to show/hide elements
+    // Apply filters to show/hide elements AND handle backface rendering
     useEffect(() => {
         if (!sceneGroup) return
+
+        // Apply backface rendering if enabled
+        if (renderBackFaces) {
+            sceneGroup.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    const material = child.material as THREE.MeshStandardMaterial
+                    material.side = THREE.BackSide
+                    material.needsUpdate = true
+                }
+            })
+        }
 
         const hasFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
 
@@ -185,7 +197,7 @@ export function SpeckleModel({ projectId, modelId, visible = true }: SpeckleMode
         })
 
         console.log(`Filtering complete: ${visibleCount} visible, ${hiddenCount} hidden`)
-    }, [sceneGroup, filters])
+    }, [sceneGroup, filters, renderBackFaces])
 
     // Camera Fitting Effect
     useEffect(() => {
