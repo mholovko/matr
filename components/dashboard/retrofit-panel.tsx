@@ -1,0 +1,235 @@
+"use client"
+
+import { useState } from "react"
+import { ChevronsRight, Calendar, DollarSign, Activity, Layers, ChevronDown, ChevronUp } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { retrofitScopes, type RetrofitScope, type DesignScenario } from "@/lib/data/scopes"
+
+export function RetrofitPanel() {
+    const [isCollapsed, setIsCollapsed] = useState(false)
+    const [selectedScope, setSelectedScope] = useState<RetrofitScope | null>(null)
+    const [expandedScenarios, setExpandedScenarios] = useState(false)
+
+    const getStatusColor = (status: RetrofitScope['status']) => {
+        switch (status) {
+            case 'completed': return 'bg-emerald-500'
+            case 'in-progress': return 'bg-amber-500'
+            case 'planning': return 'bg-blue-500'
+        }
+    }
+
+    const getCategoryIcon = (category: RetrofitScope['category']) => {
+        return <Layers className="h-4 w-4" />
+    }
+
+    return (
+        <aside
+            className={cn(
+                "fixed right-0 top-0 h-screen flex flex-col shadow-2xl z-50 transition-all duration-300 ease-in-out",
+                "border-l border-border bg-background/95 backdrop-blur-sm",
+                isCollapsed ? "w-12" : "w-[480px]"
+            )}
+        >
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 border-b border-border bg-muted/10">
+                {!isCollapsed && (
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary animate-pulse" />
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
+                            {selectedScope ? selectedScope.title : "Retrofit Scopes"}
+                        </h3>
+                    </div>
+                )}
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className={cn(
+                        "h-6 w-6 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors",
+                        isCollapsed && "mx-auto"
+                    )}
+                >
+                    <ChevronsRight className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
+                </button>
+            </div>
+
+            {!isCollapsed && (
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {selectedScope ? (
+                        // SCOPE DETAILS
+                        <div>
+                            {/* Status & Description */}
+                            <div className="p-4 border-b border-border">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedScope.status))} />
+                                    <span className="text-xs font-bold uppercase tracking-wider text-foreground">{selectedScope.status.replace('-', ' ')}</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground leading-relaxed">{selectedScope.description}</p>
+                            </div>
+
+                            {/* Timeline */}
+                            <section>
+                                <div className="p-3 bg-muted/5 border-b border-border">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Timeline</span>
+                                    </div>
+                                </div>
+                                <div className="p-4 space-y-2 text-xs font-mono">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Duration:</span>
+                                        <span className="font-bold text-foreground">{selectedScope.timeline.duration}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Start:</span>
+                                        <span className="font-bold text-foreground">{new Date(selectedScope.timeline.startDate).toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">End:</span>
+                                        <span className="font-bold text-foreground">{new Date(selectedScope.timeline.endDate).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Cost */}
+                            <section>
+                                <div className="p-3 bg-muted/5 border-b border-border">
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign className="h-3 w-3 text-muted-foreground" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cost</span>
+                                    </div>
+                                </div>
+                                <div className="p-4">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-4xl font-bold font-mono text-foreground">£{selectedScope.baseCost.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Embodied Carbon */}
+                            <section>
+                                <div className="p-3 bg-muted/5 border-b border-border">
+                                    <div className="flex items-center gap-2">
+                                        <Activity className="h-3 w-3 text-muted-foreground" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Embodied Carbon</span>
+                                    </div>
+                                </div>
+                                <div className="p-4">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-4xl font-bold font-mono text-foreground">{selectedScope.baseEmbodiedCarbon}</span>
+                                        <span className="text-xs font-bold uppercase text-muted-foreground">kgCO₂e</span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Design Scenarios */}
+                            {selectedScope.scenarios.length > 0 && (
+                                <section>
+                                    <div className="p-3 bg-muted/5 border-b border-border flex items-center justify-between cursor-pointer hover:bg-muted/10 transition-colors"
+                                        onClick={() => setExpandedScenarios(!expandedScenarios)}>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                            Design Options ({selectedScope.scenarios.length})
+                                        </span>
+                                        {expandedScenarios ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+                                    </div>
+
+                                    {expandedScenarios && (
+                                        <div className="p-4 space-y-3">
+                                            {selectedScope.scenarios.map((scenario) => (
+                                                <div
+                                                    key={scenario.id}
+                                                    className={cn(
+                                                        "p-3 rounded border transition-colors",
+                                                        selectedScope.selectedScenario === scenario.id
+                                                            ? "border-primary bg-primary/5"
+                                                            : "border-border bg-background hover:border-primary/50"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h5 className="font-bold text-xs uppercase tracking-wider">{scenario.name}</h5>
+                                                        {selectedScope.selectedScenario === scenario.id && (
+                                                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Selected</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground mb-3">{scenario.description}</p>
+                                                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                                                        <div>
+                                                            <span className="text-muted-foreground">Cost:</span>
+                                                            <span className="font-bold ml-1 text-foreground">£{scenario.cost.toLocaleString()}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-muted-foreground">Carbon:</span>
+                                                            <span className="font-bold ml-1 text-foreground">{scenario.embodiedCarbon} kg</span>
+                                                        </div>
+                                                        {scenario.performance?.uValue && (
+                                                            <div>
+                                                                <span className="text-muted-foreground">U-value:</span>
+                                                                <span className="font-bold ml-1 text-foreground">{scenario.performance.uValue}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </section>
+                            )}
+
+                            {/* Back button */}
+                            <div className="p-4 border-t border-border">
+                                <button
+                                    onClick={() => {
+                                        setSelectedScope(null)
+                                        setExpandedScenarios(false)
+                                    }}
+                                    className="w-full text-xs font-bold uppercase tracking-wider text-primary hover:underline"
+                                >
+                                    ← Back to all scopes
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        // SCOPES LIST
+                        <div>
+                            <div className="p-3 bg-muted/5 border-b border-border">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Planning Scopes</span>
+                            </div>
+                            <div className="p-4 space-y-3">
+                                <p className="text-xs text-muted-foreground mb-4">Select a renovation work package to view details</p>
+
+                                {retrofitScopes.map((scope) => (
+                                    <button
+                                        key={scope.id}
+                                        onClick={() => setSelectedScope(scope)}
+                                        className="w-full text-left p-3 hover:bg-muted/50 rounded border border-transparent hover:border-border transition-all group"
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                {getCategoryIcon(scope.category)}
+                                                <h5 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{scope.title}</h5>
+                                            </div>
+                                            <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5", getStatusColor(scope.status))} />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{scope.description}</p>
+                                        <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                                            <div>
+                                                <div className="text-muted-foreground text-[10px] uppercase">Cost</div>
+                                                <div className="font-bold text-foreground">£{(scope.baseCost / 1000).toFixed(0)}k</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-muted-foreground text-[10px] uppercase">Carbon</div>
+                                                <div className="font-bold text-foreground">{scope.baseEmbodiedCarbon}kg</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-muted-foreground text-[10px] uppercase">Duration</div>
+                                                <div className="font-bold text-foreground">{scope.timeline.duration}</div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </aside>
+    )
+}

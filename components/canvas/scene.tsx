@@ -11,12 +11,18 @@ const SpeckleModel = dynamic(() => import('./speckle-model').then(mod => mod.Spe
 
 import { useAppStore } from '@/lib/store'
 
-export function Scene() {
+interface SceneProps {
+    modelType: 'elements' | 'rooms'
+}
+
+export function Scene({ modelType = 'elements' }: SceneProps) {
     const { setSelectedElement } = useAppStore()
 
     const projectId = process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID
-    const modelId = process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID
-    const token = process.env.SPECKLE_TOKEN
+    const elementsModelId = process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID
+    const roomsModelId = process.env.NEXT_PUBLIC_SPECKLE_ROOMS_MODEL_ID || 'dd0ee2f53f'
+
+    const modelId = modelType === 'rooms' ? roomsModelId : elementsModelId
 
     return (
         <div className="h-full w-full bg-slate-50">

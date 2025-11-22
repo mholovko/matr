@@ -9,18 +9,18 @@ export function FilterControls() {
     const hasActiveFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
 
     return (
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-0">
 
 
             {/* Level Filter */}
             {modelData.availableLevels.length > 0 && (
                 <section>
-                    <div className="mb-3">
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="p-3 bg-muted/5 border-b border-border">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             Level
-                        </h4>
+                        </span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="p-4 space-y-2">
                         {modelData.availableLevels.map((level) => (
                             <label
                                 key={level}
@@ -44,12 +44,12 @@ export function FilterControls() {
             {/* Group Filter */}
             {modelData.availableGroups.length > 0 && (
                 <section>
-                    <div className="mb-3">
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="p-3 bg-muted/5 border-b border-border">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             Group
-                        </h4>
+                        </span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="p-4 space-y-2">
                         {modelData.availableGroups.map((group) => (
                             <label
                                 key={group}
@@ -73,12 +73,12 @@ export function FilterControls() {
             {/* Category Filter */}
             {modelData.availableCategories.length > 0 && (
                 <section>
-                    <div className="mb-3">
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="p-3 bg-muted/5 border-b border-border">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             Category
-                        </h4>
+                        </span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="p-4 space-y-2">
                         {modelData.availableCategories.map((category) => (
                             <label
                                 key={category}
@@ -102,12 +102,12 @@ export function FilterControls() {
             {/* Material Summary */}
             {modelData.availableMaterials.length > 0 && (
                 <section>
-                    <div className="mb-3">
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="p-3 bg-muted/5 border-b border-border">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             Material Class
-                        </h4>
+                        </span>
                     </div>
-                    <div className="space-y-3">
+                    <div className="p-4 space-y-3">
                         {modelData.availableMaterials.slice(0, 5).map((material) => {
                             const percentage = modelData.totalVolume > 0
                                 ? (material.volume / modelData.totalVolume) * 100
@@ -141,16 +141,18 @@ export function FilterControls() {
             {/* Volume Summary */}
             {modelData.totalVolume > 0 && (
                 <section>
-                    <div className="mb-3">
-                        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <div className="p-3 bg-muted/5 border-b border-border">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             Sum of Volume
-                        </h4>
+                        </span>
                     </div>
-                    <div className="text-2xl font-bold font-mono text-foreground">
-                        {modelData.totalVolume.toFixed(2)} m³
-                    </div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
-                        Total Volume
+                    <div className="p-4">
+                        <div className="text-2xl font-bold font-mono text-foreground">
+                            {modelData.totalVolume.toFixed(2)} m³
+                        </div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">
+                            Total Volume
+                        </div>
                     </div>
                 </section>
             )}
@@ -163,12 +165,14 @@ export function FilterControls() {
             )}
             {/* Clear Filters */}
             {hasActiveFilters && (
-                <button
-                    onClick={clearFilters}
-                    className="w-full text-xs font-bold uppercase tracking-wider text-primary hover:underline"
-                >
-                    Clear All Filters
-                </button>
+                <div className="p-4 border-t border-border">
+                    <button
+                        onClick={clearFilters}
+                        className="w-full text-xs font-bold uppercase tracking-wider text-primary hover:underline"
+                    >
+                        Clear All Filters
+                    </button>
+                </div>
             )}
         </div>
     )
