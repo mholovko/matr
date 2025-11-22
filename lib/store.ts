@@ -48,6 +48,10 @@ interface AppState {
     isLoading: boolean
     loadingProgress: number
     setLoading: (loading: boolean, progress?: number) => void
+
+    // Camera Debug (dev mode)
+    cameraDebugInfo: { position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } } | null
+    setCameraDebugInfo: (info: { position: { x: number; y: number; z: number }; target: { x: number; y: number; z: number } }) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -77,6 +81,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     selectedRetrofitScopeId: null,
     setSelectedRetrofitScope: (id) => set({ selectedRetrofitScopeId: id }),
+
+    cameraDebugInfo: null,
+    setCameraDebugInfo: (info) => set({ cameraDebugInfo: info }),
 
     setSelectedElement: (id, data) => set({
         selectedElementId: id,

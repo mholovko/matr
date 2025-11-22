@@ -26,6 +26,8 @@ export interface RetrofitScope {
     scenarios: DesignScenario[]
     selectedScenario?: string
     relatedElements?: string[] // IDs of BIM elements
+    cameraPosition?: { x: number; y: number; z: number }
+    markerPosition?: { x: number; y: number; z: number } // Also used as camera target
 }
 
 export const retrofitScopes: RetrofitScope[] = [
@@ -61,7 +63,9 @@ export const retrofitScopes: RetrofitScope[] = [
             }
         ],
         selectedScenario: 'lime-render',
-        relatedElements: ['wall-external-front', 'wall-external-side']
+        relatedElements: ['wall-external-front', 'wall-external-side'],
+        cameraPosition: { x: 8.29, y: 162.72, z: -11.31 },
+        markerPosition: { x: 0.02, y: 160.28, z: -2.66 }
     },
     {
         id: 'external-wall-insulation',
@@ -111,7 +115,9 @@ export const retrofitScopes: RetrofitScope[] = [
                 }
             }
         ],
-        relatedElements: ['wall-external-all']
+        relatedElements: ['wall-external-all'],
+        cameraPosition: { x: 20.65, y: 164.38, z: -9.47 },
+        markerPosition: { x: 11.68, y: 158.1, z: -2.73 }
     },
     {
         id: 'window-replacement',
@@ -158,7 +164,9 @@ export const retrofitScopes: RetrofitScope[] = [
                 }
             }
         ],
-        relatedElements: ['windows-all']
+        relatedElements: ['windows-all'],
+        cameraPosition: { x: -6.67, y: 157.93, z: -2.48 },
+        markerPosition: { x: -0.09, y: 157.46, z: -2.15 }
     },
     {
         id: 'loft-insulation',
@@ -187,6 +195,8 @@ export const retrofitScopes: RetrofitScope[] = [
             }
         ],
         selectedScenario: 'mineral-wool-300mm',
-        relatedElements: ['roof-structure']
+        relatedElements: ['roof-structure'],
+        cameraPosition: { x: 4.6, y: 165.61, z: 19.14 },
+        markerPosition: { x: 5.1, y: 164.53, z: -2.31 }
     }
 ]

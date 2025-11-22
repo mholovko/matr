@@ -7,6 +7,7 @@ import { retrofitScopes, type RetrofitScope, type DesignScenario } from "@/lib/d
 import { useAppStore } from "@/lib/store"
 import { feedEvents, type FeedEvent } from "@/lib/data/feed"
 import { FeedItem } from "./feed-item"
+import { CameraDebugUI } from "./camera-debug-ui"
 
 export function RetrofitPanel() {
     const [isCollapsed, setIsCollapsed] = useState(false)
@@ -270,6 +271,13 @@ export function RetrofitPanel() {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Camera Debug Helper - bottom of panel */}
+            {!isCollapsed && (
+                <div className="p-3 border-t border-border">
+                    <CameraDebugUI />
                 </div>
             )}
         </aside>

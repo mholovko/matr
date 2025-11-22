@@ -80,11 +80,30 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 // Calculate initial bounds to check size
                 const box = new THREE.Box3().setFromObject(container)
                 const size = box.getSize(new THREE.Vector3())
+                const center = box.getCenter(new THREE.Vector3())
+                const min = box.min
+                const max = box.max
+
+                console.log("=== MODEL BOUNDS ===")
+                console.log("Size:", { x: size.x, y: size.y, z: size.z })
+                console.log("Center:", { x: center.x, y: center.y, z: center.z })
+                console.log("Min:", { x: min.x, y: min.y, z: min.z })
+                console.log("Max:", { x: max.x, y: max.y, z: max.z })
+                console.log("===================")
 
                 // If the model is huge (>1000 units), assume it's Millimeters and scale to Meters
                 if (size.length() > 1000) {
                     console.log("Scaling model from mm to m (0.001)")
                     container.scale.set(0.001, 0.001, 0.001)
+
+                    // Recalculate bounds after scaling
+                    const scaledBox = new THREE.Box3().setFromObject(container)
+                    const scaledSize = scaledBox.getSize(new THREE.Vector3())
+                    const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
+                    console.log("=== SCALED MODEL BOUNDS ===")
+                    console.log("Scaled Size:", { x: scaledSize.x, y: scaledSize.y, z: scaledSize.z })
+                    console.log("Scaled Center:", { x: scaledCenter.x, y: scaledCenter.y, z: scaledCenter.z })
+                    console.log("===========================")
                 }
 
                 setSceneGroup(container)
@@ -284,12 +303,23 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
     }
 
 
-    // Selection Highlight Logic
-    // Re-color meshes based on selection
-    useMemo(() => {
+    // Selection Highlight Logic & Raycasting Control
+    // Re-color meshes based on selection and disable raycasting if selection is disabled
+    useEffect(() => {
         if (!sceneGroup) return
         sceneGroup.traverse((child) => {
             if (child instanceof THREE.Mesh) {
+                // Raycasting control: make mesh "transparent" to clicks if selection is disabled OR if parent is hidden
+                // This allows clicks to pass through to the canvas onPointerMissed event
+                // And prevents hidden/filtered elements from blocking clicks on visible ones
+                const isParentVisible = child.parent ? child.parent.visible : true
+
+                if (enableSelection && isParentVisible) {
+                    child.raycast = THREE.Mesh.prototype.raycast
+                } else {
+                    child.raycast = () => { }
+                }
+
                 // Only highlight if selection is enabled AND it matches the selected ID
                 const isSelected = enableSelection && child.userData.parentId === selectedElementId
                     // Reset color or highlight
