@@ -7,9 +7,8 @@ import { LogContent } from "./log-content"
 import { FilterControls } from "./filter-controls"
 import { cn } from "@/lib/utils"
 
-export function MobileDrawer() {
-    const { selectedElementId, selectedElementData, setSelectedElement, setMobileDrawerSnap } = useAppStore()
-    const [activeTab, setActiveTab] = useState<"materials" | "carbon" | "docs">("materials")
+export function MobileDrawer({ children }: { children: React.ReactNode }) {
+    const { setMobileDrawerSnap } = useAppStore()
     const [snap, setSnap] = useState<number | string | null>(0.5)
     const [mounted, setMounted] = useState(false)
 
@@ -40,7 +39,7 @@ export function MobileDrawer() {
                     <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted my-4 cursor-grab active:cursor-grabbing" />
 
                     <div
-                        className="overflow-y-auto custom-scrollbar"
+                        className="overflow-y-auto custom-scrollbar overscroll-contain touch-pan-y"
                         style={{
                             height: snap === "100px"
                                 ? "calc(100px - 2.5rem)"
@@ -49,22 +48,7 @@ export function MobileDrawer() {
                                     : "auto"
                         }}
                     >
-                        {selectedElementId ? (
-                            <LogContent
-                                selectedElementId={selectedElementId}
-                                selectedElementData={selectedElementData}
-                                setSelectedElement={setSelectedElement}
-                                activeTab={activeTab}
-                                setActiveTab={setActiveTab}
-                            />
-                        ) : (
-                            <div className="p-4">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-foreground mb-4">
-                                    Model Filters
-                                </h3>
-                                <FilterControls />
-                            </div>
-                        )}
+                        {children}
                     </div>
                 </Drawer.Content>
             </Drawer.Root>
