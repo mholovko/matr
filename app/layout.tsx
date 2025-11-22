@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PageToggle } from "@/components/navigation/page-toggle";
+import { LayoutScene } from "@/components/canvas/layout-scene";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +42,10 @@ export default function RootLayout({
 
           {/* Main Content Area */}
           <div className="flex-1 flex relative z-0 overflow-hidden">
-            {children}
+            <LayoutScene />
+            <div className="relative z-10 w-full h-full pointer-events-none [&>*]:pointer-events-auto">
+              {children}
+            </div>
           </div>
         </main>
       </body>

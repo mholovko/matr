@@ -33,10 +33,26 @@ export function Scene({ modelType = 'elements' }: SceneProps) {
                 <ambientLight intensity={0.5} />
                 <pointLight position={[10, 10, 10]} />
 
-                {projectId && modelId ? (
-                    <SpeckleModel projectId={projectId} modelId={modelId} />
-                ) : (
-                    <Model />
+                {projectId && (
+                    <>
+                        {/* Elements Model */}
+                        {elementsModelId && (
+                            <SpeckleModel
+                                projectId={projectId}
+                                modelId={elementsModelId}
+                                visible={modelType === 'elements'}
+                            />
+                        )}
+
+                        {/* Rooms Model */}
+                        {roomsModelId && (
+                            <SpeckleModel
+                                projectId={projectId}
+                                modelId={roomsModelId}
+                                visible={modelType === 'rooms'}
+                            />
+                        )}
+                    </>
                 )}
 
 

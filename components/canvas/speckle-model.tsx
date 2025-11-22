@@ -12,9 +12,10 @@ import type { OrbitControls } from 'three-stdlib'
 interface SpeckleModelProps {
     projectId: string
     modelId: string
+    visible?: boolean
 }
 
-export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
+export function SpeckleModel({ projectId, modelId, visible = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
     const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore()
@@ -67,8 +68,10 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
                 console.log(`Created ${meshCount} mesh groups. Container has ${container.children.length} children.`)
                 console.log(`Collected ${allElements.length} building elements`)
 
-                // Store all elements in the app state
-                setModelElements(allElements)
+                // Store all elements in the app state ONLY if visible
+                if (visible) {
+                    setModelElements(allElements)
+                }
 
                 // Handle Units (Simple heuristic for now)
                 // Calculate initial bounds to check size
@@ -91,7 +94,20 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
         }
 
         load()
-    }, [projectId, modelId, setLoading, setModelElements])
+    }, [projectId, modelId, setLoading, setModelElements]) // Removed visible from dependency to avoid reloading on toggle
+
+    // Update store when visibility changes
+    useEffect(() => {
+        if (visible && sceneGroup) {
+            const allElements: SpeckleObject[] = []
+            sceneGroup.traverse((obj) => {
+                if (obj.userData.id && obj.userData.properties) {
+                    allElements.push(obj.userData)
+                }
+            })
+            setModelElements(allElements)
+        }
+    }, [visible, sceneGroup, setModelElements])
 
     // Enable pointer events on meshes after scene is loaded
     useEffect(() => {
@@ -173,7 +189,7 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
 
     // Camera Fitting Effect
     useEffect(() => {
-        if (!sceneGroup || !controls) return
+        if (!sceneGroup || !controls || !visible) return
 
         // Give a small delay to ensure everything is rendered/updated
         const timer = setTimeout(() => {
@@ -203,7 +219,7 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
         }, 100)
 
         return () => clearTimeout(timer)
-    }, [sceneGroup, controls, camera])
+    }, [sceneGroup, controls, camera]) // Removed visible from dependency to prevent reset on toggle
 
     // Interaction Handlers - distinguish between click and drag
     const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
@@ -274,6 +290,7 @@ export function SpeckleModel({ projectId, modelId }: SpeckleModelProps) {
             rotation={[-Math.PI / 2, 0, 0]} // Revit Z-up adjustment
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
+            visible={visible}
         >
             <primitive object={sceneGroup} />
         </group>
