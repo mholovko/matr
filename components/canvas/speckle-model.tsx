@@ -105,7 +105,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             const allElements: SpeckleObject[] = []
             sceneGroup.traverse((obj) => {
                 if (obj.userData.id && obj.userData.properties) {
-                    allElements.push(obj.userData)
+                    allElements.push(obj.userData as SpeckleObject)
                 }
             })
             setModelElements(allElements)
