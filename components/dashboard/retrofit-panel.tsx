@@ -1,14 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ChevronsRight, Calendar, DollarSign, Activity, Layers, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { retrofitScopes, type RetrofitScope, type DesignScenario } from "@/lib/data/scopes"
+import { useAppStore } from "@/lib/store"
+import { feedEvents, type FeedEvent } from "@/lib/data/feed"
+import { FeedItem } from "./feed-item"
 
 export function RetrofitPanel() {
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const [selectedScope, setSelectedScope] = useState<RetrofitScope | null>(null)
+    const { selectedRetrofitScopeId, setSelectedRetrofitScope } = useAppStore()
     const [expandedScenarios, setExpandedScenarios] = useState(false)
+
+    // Derived state for selected scope
+    const selectedScope = selectedRetrofitScopeId
+        ? retrofitScopes.find(s => s.id === selectedRetrofitScopeId) || null
+        : null
+
+    // Auto-expand when scope is selected
+    useEffect(() => {
+        if (selectedScope) {
+            setIsCollapsed(false)
+        }
+    }, [selectedScope])
 
     const getStatusColor = (status: RetrofitScope['status']) => {
         switch (status) {
@@ -21,6 +36,10 @@ export function RetrofitPanel() {
     const getCategoryIcon = (category: RetrofitScope['category']) => {
         return <Layers className="h-4 w-4" />
     }
+
+    const relatedEvents = selectedScope
+        ? feedEvents.filter(e => e.relatedScope === selectedScope.id)
+        : []
 
     return (
         <aside
@@ -173,11 +192,35 @@ export function RetrofitPanel() {
                                 </section>
                             )}
 
+                            {/* Related Feed Events */}
+                            {relatedEvents.length > 0 && (
+                                <section>
+                                    <div className="p-3 bg-muted/5 border-b border-border">
+                                        <div className="flex items-center gap-2">
+                                            <Activity className="h-3 w-3 text-muted-foreground" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Activity Log</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 space-y-4">
+                                        <div className="p-4 space-y-4">
+                                            {relatedEvents.map((event, index) => (
+                                                <FeedItem
+                                                    key={event.id}
+                                                    event={event}
+                                                    showRelatedScope={false}
+                                                    isLast={index === relatedEvents.length - 1}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
+
                             {/* Back button */}
                             <div className="p-4 border-t border-border">
                                 <button
                                     onClick={() => {
-                                        setSelectedScope(null)
+                                        setSelectedRetrofitScope(null)
                                         setExpandedScenarios(false)
                                     }}
                                     className="w-full text-xs font-bold uppercase tracking-wider text-primary hover:underline"
@@ -198,7 +241,7 @@ export function RetrofitPanel() {
                                 {retrofitScopes.map((scope) => (
                                     <button
                                         key={scope.id}
-                                        onClick={() => setSelectedScope(scope)}
+                                        onClick={() => setSelectedRetrofitScope(scope.id)}
                                         className="w-full text-left p-3 hover:bg-muted/50 rounded border border-transparent hover:border-border transition-all group"
                                     >
                                         <div className="flex items-start justify-between mb-2">

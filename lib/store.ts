@@ -40,6 +40,10 @@ interface AppState {
     isLogOpen: boolean
     toggleLog: (isOpen: boolean) => void
 
+    // Retrofit Selection
+    selectedRetrofitScopeId: string | null
+    setSelectedRetrofitScope: (id: string | null) => void
+
     // Model Loading
     isLoading: boolean
     loadingProgress: number
@@ -70,6 +74,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     isLoading: false,
     loadingProgress: 0,
+
+    selectedRetrofitScopeId: null,
+    setSelectedRetrofitScope: (id) => set({ selectedRetrofitScopeId: id }),
 
     setSelectedElement: (id, data) => set({
         selectedElementId: id,

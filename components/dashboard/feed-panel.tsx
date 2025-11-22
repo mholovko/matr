@@ -1,39 +1,31 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronsRight, Calendar, Users, CheckCircle, Package, Search, Milestone } from "lucide-react"
+import { ChevronsRight, Calendar, Users, CheckCircle, Package, Search, Milestone, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { feedEvents, type FeedEvent } from "@/lib/data/feed"
+import { useAppStore } from "@/lib/store"
+import { retrofitScopes } from "@/lib/data/scopes"
+import { useRouter } from "next/navigation"
+import { FeedItem } from "./feed-item"
 
 export function FeedPanel() {
+    const router = useRouter()
     const [isCollapsed, setIsCollapsed] = useState(false)
     const [filterType, setFilterType] = useState<FeedEvent['type'] | 'all'>('all')
+    const { selectedRetrofitScopeId, setSelectedRetrofitScope } = useAppStore()
 
-    const getEventIcon = (type: FeedEvent['type']) => {
-        switch (type) {
-            case 'construction': return <Package className="h-3 w-3" />
-            case 'meeting': return <Users className="h-3 w-3" />
-            case 'decision': return <CheckCircle className="h-3 w-3" />
-            case 'delivery': return <Package className="h-3 w-3" />
-            case 'survey': return <Search className="h-3 w-3" />
-            case 'milestone': return <Milestone className="h-3 w-3" />
-        }
-    }
 
-    const getEventColor = (type: FeedEvent['type']) => {
-        switch (type) {
-            case 'construction': return 'bg-blue-500'
-            case 'meeting': return 'bg-purple-500'
-            case 'decision': return 'bg-emerald-500'
-            case 'delivery': return 'bg-amber-500'
-            case 'survey': return 'bg-pink-500'
-            case 'milestone': return 'bg-red-500'
-        }
-    }
+    const filteredEvents = feedEvents.filter(event => {
+        // Filter by type
+        if (filterType !== 'all' && event.type !== filterType) return false
 
-    const filteredEvents = filterType === 'all'
-        ? feedEvents
-        : feedEvents.filter(event => event.type === filterType)
+        return true
+    })
+
+    const selectedScopeTitle = selectedRetrofitScopeId
+        ? retrofitScopes.find(s => s.id === selectedRetrofitScopeId)?.title
+        : null
 
     return (
         <aside
@@ -110,65 +102,11 @@ export function FeedPanel() {
 
                         <div className="p-4 space-y-6">
                             {filteredEvents.map((event, index) => (
-                                <div key={event.id} className="relative pl-4">
-                                    {/* Timeline line */}
-                                    {index < filteredEvents.length - 1 && (
-                                        <div className="absolute left-[5px] top-2 bottom-[-24px] w-px bg-border" />
-                                    )}
-
-                                    {/* Event Item */}
-                                    <div className="flex gap-3">
-                                        {/* Dot */}
-                                        <div className={cn(
-                                            "absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full ring-2 ring-background",
-                                            getEventColor(event.type)
-                                        )} />
-
-                                        <div className="flex-1">
-                                            {/* Date & Type */}
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-                                                        {new Date(event.date).toLocaleDateString('en-GB', {
-                                                            day: 'numeric',
-                                                            month: 'short',
-                                                            year: 'numeric'
-                                                        })}
-                                                    </span>
-                                                </div>
-                                                <span className={cn(
-                                                    "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground"
-                                                )}>
-                                                    {event.type}
-                                                </span>
-                                            </div>
-
-                                            {/* Content */}
-                                            <h4 className="font-bold text-sm text-foreground mb-1">{event.title}</h4>
-                                            <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{event.description}</p>
-
-                                            {/* Metadata Tags */}
-                                            <div className="flex flex-wrap gap-2">
-                                                {event.participants && event.participants.length > 0 && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Users className="h-3 w-3 text-muted-foreground" />
-                                                        <span className="text-[10px] text-muted-foreground">
-                                                            {event.participants.join(", ")}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {event.relatedScope && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Package className="h-3 w-3 text-muted-foreground" />
-                                                        <span className="text-[10px] text-muted-foreground">
-                                                            {event.relatedScope}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <FeedItem
+                                    key={event.id}
+                                    event={event}
+                                    isLast={index === filteredEvents.length - 1}
+                                />
                             ))}
                         </div>
 

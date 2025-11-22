@@ -104,7 +104,7 @@ export const feedEvents: FeedEvent[] = [
         date: '2025-09-10',
         type: 'meeting',
         title: 'Project Kickoff Meeting',
-        description: 'First community meeting to introduce the retrofit project. Discussed goals, timeline, and participatory approach. High enthusiasm from residents.',
+        description: 'First community meeting to introduce the retrofit project. Discussed goals, timeline, and participatory approach.',
         participants: ['Civic Square Team', 'Residents', 'Retrofit Coordinator']
     }
 ]
