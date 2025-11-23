@@ -54,7 +54,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
         >
             <ErrorBoundary>
                 <Canvas
-                    camera={{ position: [10, 10, 10], fov: 50 }}
+                    camera={{ position: [-10, 10, 10], fov: 50 }}
                     onPointerMissed={(e) => {
                         // Prevent deselection if:
                         // 1. It's not a left click (e.g. right click pan)

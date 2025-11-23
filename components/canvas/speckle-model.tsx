@@ -33,7 +33,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             selectedAssemblyId: state.selectedAssemblyId,
         }))
     )
-    const { camera, controls } = useThree()
+    const { controls } = useThree()
 
     useEffect(() => {
         const load = async () => {
@@ -81,6 +81,9 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 traverse(root)
                 console.log(`Created ${meshCount} mesh groups. Container has ${container.children.length} children.`)
                 console.log(`Collected ${allElements.length} building elements`)
+
+                // Apply Revit Z-up rotation to the container immediately
+                container.rotation.x = -Math.PI / 2
 
                 // Store all elements in the app state ONLY if visible
                 if (visible) {
@@ -265,39 +268,8 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         console.log(`Filtering complete: ${visibleCount} visible, ${hiddenCount} hidden`)
     }, [sceneGroup, filters, renderBackFaces, enableFiltering, viewMode, currentSector, selectedAssemblyId])
 
-    // Camera Fitting Effect
-    useEffect(() => {
-        if (!sceneGroup || !controls || !visible) return
-
-        // Give a small delay to ensure everything is rendered/updated
-        const timer = setTimeout(() => {
-            // Recalculate box after scaling/rendering
-            const box = new THREE.Box3().setFromObject(sceneGroup)
-            const size = box.getSize(new THREE.Vector3())
-            const center = box.getCenter(new THREE.Vector3())
-            const sphere = new THREE.Sphere()
-            box.getBoundingSphere(sphere)
-
-            console.log("Fitting Camera to Model:", { size, center, radius: sphere.radius })
-
-            // Adjust camera to fit the sphere
-            const dist = sphere.radius * 2.5 // Zoom factor
-            const viewDir = new THREE.Vector3(1, 1, 1).normalize() // Isometric-ish view
-            const target = sphere.center // Use actual model center
-            const newPos = target.clone().add(viewDir.multiplyScalar(dist))
-
-            camera.position.copy(newPos)
-            camera.lookAt(target)
-
-            const orbitControls = controls as unknown as OrbitControls
-            if (orbitControls.target) {
-                orbitControls.target.copy(target)
-                orbitControls.update()
-            }
-        }, 100)
-
-        return () => clearTimeout(timer)
-    }, [sceneGroup, controls, camera]) // Removed visible from dependency to prevent reset on toggle
+    // Removed automatic camera fitting - rely on OrbitControls default behavior
+    // The initial camera position from Canvas props is sufficient
 
     // Interaction Handlers - distinguish between click and drag
     const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
@@ -404,7 +376,6 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
     return (
         <group
-            rotation={[-Math.PI / 2, 0, 0]} // Revit Z-up adjustment
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             visible={visible}
