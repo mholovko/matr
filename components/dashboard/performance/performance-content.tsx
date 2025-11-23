@@ -5,9 +5,13 @@ import { cn } from "@/lib/utils"
 import { roomPerformanceData, type RoomPerformanceData } from "@/lib/data/performance"
 
 import { useAppStore } from "@/lib/store"
+import { useShallow } from "zustand/react/shallow"
 
 export function PerformanceContent() {
-    const { performanceSelectedRoom, setPerformanceSelectedRoom } = useAppStore()
+    const { performanceSelectedRoom, setPerformanceSelectedRoom } = useAppStore(useShallow(state => ({
+        performanceSelectedRoom: state.performanceSelectedRoom,
+        setPerformanceSelectedRoom: state.setPerformanceSelectedRoom
+    })))
     const getStatusColor = (status: 'good' | 'moderate' | 'poor') => {
         switch (status) {
             case 'good': return 'bg-emerald-500'

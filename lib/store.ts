@@ -22,7 +22,7 @@ interface AppState {
     // Selection
     selectedElementId: string | null
     selectedElementData: SpeckleObject | null
-    setSelectedElement: (id: string | null, data?: any) => void
+    setSelectedElement: (id: string | null, data?: SpeckleObject) => void
 
     // Model Elements
     modelElements: SpeckleObject[]

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { useAppStore } from '@/lib/store'
+import { useShallow } from 'zustand/react/shallow'
 import { fetchSpeckleData } from '@/lib/speckle/loader'
 import { convertSpeckleObject } from '@/lib/speckle/converter'
 import { SpeckleObject } from '@/lib/speckle/types'
@@ -21,7 +22,15 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore()
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore(
+        useShallow((state) => ({
+            setSelectedElement: state.setSelectedElement,
+            setLoading: state.setLoading,
+            selectedElementId: state.selectedElementId,
+            setModelElements: state.setModelElements,
+            filters: state.filters,
+        }))
+    )
     const { camera, controls } = useThree()
 
     useEffect(() => {
@@ -38,7 +47,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 let meshCount = 0
 
                 // Helper to recursively parse the tree
-                const traverse = (obj: any) => {
+                const traverse = (obj: SpeckleObject) => {
                     // Collect element if it has properties (is a building element)
                     if (obj.id && obj.properties) {
                         allElements.push(obj)
@@ -60,8 +69,8 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                     } else {
                         // Fallback: iterate over all keys to find arrays of objects (common in some Speckle converters)
                         Object.values(obj).forEach(val => {
-                            if (Array.isArray(val) && val.length > 0 && (val[0] as any).id) {
-                                val.forEach((child: any) => traverse(child))
+                            if (Array.isArray(val) && val.length > 0 && (val[0] as SpeckleObject).id) {
+                                val.forEach((child: SpeckleObject) => traverse(child))
                             }
                         })
                     }

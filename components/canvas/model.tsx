@@ -2,10 +2,14 @@
 
 import { useRef, useState } from 'react'
 import { useAppStore } from '@/lib/store'
+import { useShallow } from 'zustand/react/shallow'
 import * as THREE from 'three'
 
 export function Model() {
-    const { setSelectedElement, selectedElementId } = useAppStore()
+    const { setSelectedElement, selectedElementId } = useAppStore(useShallow(state => ({
+        setSelectedElement: state.setSelectedElement,
+        selectedElementId: state.selectedElementId
+    })))
 
     // Mocking a Wall Element
     return (

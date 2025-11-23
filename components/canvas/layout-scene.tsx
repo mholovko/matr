@@ -7,7 +7,7 @@ import { useEffect, useState } from "react"
 
 export function LayoutScene() {
     const pathname = usePathname()
-    const { mobileDrawerSnap } = useAppStore()
+    const mobileDrawerSnap = useAppStore(state => state.mobileDrawerSnap)
     const [isMobile, setIsMobile] = useState(false)
 
     useEffect(() => {

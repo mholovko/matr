@@ -7,7 +7,7 @@ import { FilterControls } from "../filter-controls"
 import { LogContent } from "./log-content"
 
 export function LogPanel() {
-    const { selectedElementId } = useAppStore()
+    const selectedElementId = useAppStore(state => state.selectedElementId)
     const [isCollapsed, setIsCollapsed] = useState(false)
 
     return (

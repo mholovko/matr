@@ -8,9 +8,13 @@ import { feedEvents } from "@/lib/data/feed"
 import { FeedItem } from "../feed/feed-item"
 
 import { useAppStore } from "@/lib/store"
+import { useShallow } from "zustand/react/shallow"
 
 export function RetrofitContent() {
-    const { selectedRetrofitScopeId, setSelectedRetrofitScope } = useAppStore()
+    const { selectedRetrofitScopeId, setSelectedRetrofitScope } = useAppStore(useShallow(state => ({
+        selectedRetrofitScopeId: state.selectedRetrofitScopeId,
+        setSelectedRetrofitScope: state.setSelectedRetrofitScope
+    })))
     const [expandedScenarios, setExpandedScenarios] = useState(false)
 
     // Derived state for selected scope

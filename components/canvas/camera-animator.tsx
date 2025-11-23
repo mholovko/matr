@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import * as THREE from 'three'
 import { useThree } from '@react-three/fiber'
 import { retrofitScopes } from '@/lib/data/scopes'
+import type { OrbitControls } from 'three-stdlib'
 
 interface CameraAnimatorProps {
     selectedScopeId: string | null
@@ -70,7 +71,8 @@ export function CameraAnimator({ selectedScopeId }: CameraAnimatorProps) {
 
         // Smooth camera animation
         const startPos = camera.position.clone()
-        const startTarget = (controls as any).target.clone()
+        const orbitControls = controls as unknown as OrbitControls
+        const startTarget = orbitControls.target.clone()
         const duration = 1000 // ms
         const startTime = Date.now()
 
@@ -81,8 +83,8 @@ export function CameraAnimator({ selectedScopeId }: CameraAnimatorProps) {
             const eased = 1 - Math.pow(1 - progress, 3)
 
             camera.position.lerpVectors(startPos, targetPos, eased)
-                ; (controls as any).target.lerpVectors(startTarget, targetLookAt, eased)
-                ; (controls as any).update()
+            orbitControls.target.lerpVectors(startTarget, targetLookAt, eased)
+            orbitControls.update()
 
             if (progress < 1) {
                 requestAnimationFrame(animate)

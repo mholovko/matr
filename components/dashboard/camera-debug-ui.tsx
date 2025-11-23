@@ -5,7 +5,7 @@ import { Copy, Check } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 
 export function CameraDebugUI() {
-    const { cameraDebugInfo } = useAppStore()
+    const cameraDebugInfo = useAppStore(state => state.cameraDebugInfo)
     const [copied, setCopied] = useState(false)
 
     if (process.env.NODE_ENV !== 'development' || !cameraDebugInfo) return null

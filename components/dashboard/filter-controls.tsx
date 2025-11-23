@@ -1,10 +1,20 @@
 "use client"
 
 import { useAppStore } from "@/lib/store"
+import { useShallow } from "zustand/react/shallow"
 import { cn } from "@/lib/utils"
 
 export function FilterControls() {
-    const { filters, toggleCategoryFilter, toggleLevelFilter, toggleGroupFilter, clearFilters, modelData } = useAppStore()
+    const { filters, toggleCategoryFilter, toggleLevelFilter, toggleGroupFilter, clearFilters, modelData } = useAppStore(
+        useShallow((state) => ({
+            filters: state.filters,
+            toggleCategoryFilter: state.toggleCategoryFilter,
+            toggleLevelFilter: state.toggleLevelFilter,
+            toggleGroupFilter: state.toggleGroupFilter,
+            clearFilters: state.clearFilters,
+            modelData: state.modelData,
+        }))
+    )
 
     const hasActiveFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
 

@@ -3,6 +3,7 @@ import { Box, Layers, Activity, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { useAppStore } from "@/lib/store"
+import { useShallow } from "zustand/react/shallow"
 
 export function LogContent() {
     const {
@@ -11,7 +12,15 @@ export function LogContent() {
         setSelectedElement,
         logActiveTab,
         setLogActiveTab
-    } = useAppStore()
+    } = useAppStore(
+        useShallow((state) => ({
+            selectedElementId: state.selectedElementId,
+            selectedElementData: state.selectedElementData,
+            setSelectedElement: state.setSelectedElement,
+            logActiveTab: state.logActiveTab,
+            setLogActiveTab: state.setLogActiveTab,
+        }))
+    )
     // Extract element info from selectedElementData
     const elementName = selectedElementData?.name ||
         selectedElementData?.properties?.Parameters?.["Instance Parameters"]?.Other?.["Family and Type"]?.value ||

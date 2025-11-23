@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PageToggle } from "@/components/navigation/page-toggle";
 import { LayoutScene } from "@/components/canvas/layout-scene";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,7 +45,9 @@ export default function RootLayout({
           <div className="flex-1 flex relative z-0 overflow-hidden">
             <LayoutScene />
             <div className="relative z-10 w-full h-full pointer-events-none [&>*]:pointer-events-auto">
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </div>
           </div>
         </main>

@@ -8,7 +8,7 @@ import { useAppStore } from "@/lib/store"
 
 export function PerformancePanel() {
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const { performanceSelectedRoom } = useAppStore()
+    const performanceSelectedRoom = useAppStore(state => state.performanceSelectedRoom)
 
     return (
         <aside

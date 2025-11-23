@@ -14,7 +14,7 @@ interface FeedItemProps {
 }
 
 export function FeedItem({ event, showRelatedScope = true, isLast = false }: FeedItemProps) {
-    const { setSelectedRetrofitScope } = useAppStore()
+    const setSelectedRetrofitScope = useAppStore(state => state.setSelectedRetrofitScope)
     const router = useRouter()
 
     const getEventIcon = (type: FeedEvent['type']) => {

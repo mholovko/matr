@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
 export function MobileDrawer({ children }: { children: React.ReactNode }) {
-    const { setMobileDrawerSnap } = useAppStore()
+    const setMobileDrawerSnap = useAppStore(state => state.setMobileDrawerSnap)
     const [snap, setSnap] = useState<number | string | null>(0.5)
     const [mounted, setMounted] = useState(false)
 

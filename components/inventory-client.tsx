@@ -7,7 +7,7 @@ import { FilterControls } from "@/components/dashboard/filter-controls"
 import { useAppStore } from "@/lib/store"
 
 export function InventoryClient() {
-    const { selectedElementId } = useAppStore()
+    const selectedElementId = useAppStore(state => state.selectedElementId)
 
     return (
         <>

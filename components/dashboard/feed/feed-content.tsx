@@ -5,9 +5,13 @@ import { feedEvents, type FeedEvent } from "@/lib/data/feed"
 import { FeedItem } from "./feed-item"
 
 import { useAppStore } from "@/lib/store"
+import { useShallow } from "zustand/react/shallow"
 
 export function FeedContent() {
-    const { feedFilterType, setFeedFilterType } = useAppStore()
+    const { feedFilterType, setFeedFilterType } = useAppStore(useShallow(state => ({
+        feedFilterType: state.feedFilterType,
+        setFeedFilterType: state.setFeedFilterType
+    })))
 
     const filteredEvents = feedEvents.filter(event => {
         if (feedFilterType !== 'all' && event.type !== feedFilterType) return false

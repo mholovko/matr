@@ -10,7 +10,7 @@ import { RetrofitContent } from "./retrofit-content"
 
 export function RetrofitPanel() {
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const { selectedRetrofitScopeId, setSelectedRetrofitScope } = useAppStore()
+    const selectedRetrofitScopeId = useAppStore(state => state.selectedRetrofitScopeId)
 
     // Derived state for selected scope
     const selectedScope = selectedRetrofitScopeId
