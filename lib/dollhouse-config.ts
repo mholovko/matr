@@ -4,11 +4,11 @@ export type DollhouseSide = 'FRONT' | 'BACK' | 'LEFT' | 'RIGHT' | 'TOP'
 
 // TODO: Update these with actual group names from the model
 export const DOLLHOUSE_CONFIG: Record<DollhouseSide, string[]> = {
-    FRONT: ['Shared-Wall-1', 'Facade-Front'],
-    BACK: ['Facade-Back'],
-    LEFT: ['Ext-Wall-1', 'Facade-Left'],
-    RIGHT: ['Ext-Wall-2', 'Facade-Right'],
-    TOP: ['Roof', 'Ceiling-Level-2']
+    FRONT: ['Shared-Wall-1'],
+    BACK: [],
+    LEFT: ['Ext-Wall-1'],
+    RIGHT: ['Ext-Wall-2'],
+    TOP: ['Roof']
 }
 
 export function getSectorFromCamera(camera: THREE.Camera, target: THREE.Vector3 = new THREE.Vector3(0, 0, 0)): DollhouseSide[] {
