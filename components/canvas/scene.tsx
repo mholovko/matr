@@ -193,9 +193,9 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                     {renderMode === 'rendered' && !isInteracting && (
                         <EffectComposer multisampling={8}>
                             <N8AO
-                                aoRadius={50}
+                                aoRadius={20}
                                 distanceFalloff={0.2}
-                                intensity={3}
+                                intensity={2}
                                 screenSpaceRadius
                                 halfRes
                             />
