@@ -4,6 +4,7 @@ import { Scene } from "@/components/canvas/scene"
 import { usePathname } from "next/navigation"
 import { useAppStore } from "@/lib/store"
 import { useEffect, useState } from "react"
+import { ViewModeToggle } from "./view-mode-toggle"
 
 export function LayoutScene() {
     const pathname = usePathname()
@@ -50,6 +51,7 @@ export function LayoutScene() {
             className="absolute inset-x-0 top-0 z-0 transition-all duration-300 ease-in-out"
             style={{ bottom: bottomOffset }}
         >
+            {enableFiltering && <ViewModeToggle />}
             <Scene modelType={modelType} enableFiltering={enableFiltering} enableSelection={enableSelection} />
         </div>
     )

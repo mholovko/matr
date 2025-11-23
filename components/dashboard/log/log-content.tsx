@@ -11,7 +11,8 @@ export function LogContent() {
         selectedElementData,
         setSelectedElement,
         logActiveTab,
-        setLogActiveTab
+        setLogActiveTab,
+        selectedAssemblyId
     } = useAppStore(
         useShallow((state) => ({
             selectedElementId: state.selectedElementId,
@@ -19,6 +20,7 @@ export function LogContent() {
             setSelectedElement: state.setSelectedElement,
             logActiveTab: state.logActiveTab,
             setLogActiveTab: state.setLogActiveTab,
+            selectedAssemblyId: state.selectedAssemblyId
         }))
     )
     // Extract element info from selectedElementData
@@ -69,7 +71,7 @@ export function LogContent() {
                     className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-3 group"
                 >
                     <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
-                    Back to Inventory
+                    {selectedAssemblyId ? "Back to Assembly" : "Back to Inventory"}
                 </button>
                 <div className="space-y-2">
                     <div className="text-sm font-bold text-foreground">{elementName}</div>

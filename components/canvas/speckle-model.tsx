@@ -7,8 +7,9 @@ import { useShallow } from 'zustand/react/shallow'
 import { fetchSpeckleData } from '@/lib/speckle/loader'
 import { convertSpeckleObject } from '@/lib/speckle/converter'
 import { SpeckleObject } from '@/lib/speckle/types'
-import { useThree, ThreeEvent } from '@react-three/fiber'
+import { useThree, ThreeEvent, useFrame } from '@react-three/fiber'
 import type { OrbitControls } from 'three-stdlib'
+import { DOLLHOUSE_CONFIG, getSectorFromCamera, DollhouseSide } from '@/lib/dollhouse-config'
 
 interface SpeckleModelProps {
     projectId: string
@@ -22,13 +23,14 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters } = useAppStore(
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             setLoading: state.setLoading,
             selectedElementId: state.selectedElementId,
             setModelElements: state.setModelElements,
             filters: state.filters,
+            selectedAssemblyId: state.selectedAssemblyId,
         }))
     )
     const { camera, controls } = useThree()
@@ -152,6 +154,25 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         })
     }, [sceneGroup])
 
+    // Dollhouse Logic
+    const [currentSector, setCurrentSector] = useState<DollhouseSide | null>(null)
+    const { viewMode } = useAppStore(useShallow(state => ({ viewMode: state.viewMode })))
+
+    // Update sector based on camera position
+    useFrame(({ camera }) => {
+        if (viewMode !== 'dollhouse') return
+
+        const orbitControls = controls as unknown as OrbitControls
+        const target = orbitControls?.target || new THREE.Vector3(0, 0, 0)
+
+        // Simple throttling or check every frame? 
+        // For smoothness, every frame is fine, but state update only on change
+        const newSector = getSectorFromCamera(camera, target)
+        if (newSector !== currentSector) {
+            setCurrentSector(newSector)
+        }
+    })
+
     // Apply filters to show/hide elements AND handle backface rendering
     useEffect(() => {
         if (!sceneGroup) return
@@ -168,9 +189,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         }
 
         const hasFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
-
-        console.log("Applying filters:", filters)
-        console.log("Has filters:", hasFilters)
+        const isDollhouse = viewMode === 'dollhouse' && currentSector && !selectedAssemblyId
 
         let visibleCount = 0
         let hiddenCount = 0
@@ -187,8 +206,19 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
                 const isHidden = element.properties?.isHidden // Check for explicit hidden state if we add that later
 
-                // If no filters active OR filtering is disabled, show everything
-                if (!hasFilters || !enableFiltering) {
+                // DOLLHOUSE VISIBILITY CHECK
+                let isHiddenByDollhouse = false
+                if (isDollhouse && groupName && currentSector) {
+                    const hiddenGroups = DOLLHOUSE_CONFIG[currentSector]
+
+                    // Debug log for specific groups to check matching
+                    if (hiddenGroups.includes(groupName)) {
+                        isHiddenByDollhouse = true
+                    }
+                }
+
+                // If no filters active OR filtering is disabled, show everything (unless hidden by dollhouse)
+                if ((!hasFilters || !enableFiltering) && !isHiddenByDollhouse) {
                     child.visible = true
                     // Enable raycasting for all meshes in this group
                     child.traverse((c) => {
@@ -205,8 +235,8 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 let matchesLevel = filters.levels.length === 0 || filters.levels.includes(level)
                 let matchesGroup = filters.groups.length === 0 || filters.groups.includes(groupName)
 
-                // Element is visible if it matches all active filter types
-                child.visible = matchesCategory && matchesLevel && matchesGroup
+                // Element is visible if it matches all active filter types AND is not hidden by dollhouse
+                child.visible = matchesCategory && matchesLevel && matchesGroup && !isHiddenByDollhouse
 
                 // Disable/enable raycasting based on visibility
                 child.traverse((c) => {
@@ -229,7 +259,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         })
 
         console.log(`Filtering complete: ${visibleCount} visible, ${hiddenCount} hidden`)
-    }, [sceneGroup, filters, renderBackFaces, enableFiltering])
+    }, [sceneGroup, filters, renderBackFaces, enableFiltering, viewMode, currentSector, selectedAssemblyId])
 
     // Camera Fitting Effect
     useEffect(() => {
@@ -304,8 +334,35 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
             console.log("Full element being passed to store:", fullElement)
 
-            // Pass the complete element data
-            setSelectedElement(elementId, fullElement)
+            // Check for groupName
+            const groupName = fullElement.properties?.groupName
+            const { selectedAssemblyId, setSelectedAssembly } = useAppStore.getState()
+
+            // LOGIC:
+            // 1. If we are already viewing this assembly, we can select individual elements within it.
+            // 2. If we are NOT viewing it (or clicked a different group), clicking a grouped element selects the ASSEMBLY first.
+
+            if (selectedAssemblyId === groupName) {
+                // We are already viewing this assembly -> Select the element
+                setSelectedElement(elementId, fullElement)
+            } else if (groupName) {
+                // We are NOT viewing this assembly -> Select the ASSEMBLY
+                console.log(`Element belongs to group: ${groupName}. Selecting Assembly.`)
+
+                // 1. Clear existing filters
+                useAppStore.getState().clearFilters()
+
+                // 2. Set the group filter (Isolate)
+                useAppStore.getState().toggleGroupFilter(groupName)
+
+                // 3. Set Assembly Selection
+                setSelectedAssembly(groupName)
+                setSelectedElement(null) // Clear element selection to show assembly view
+            } else {
+                // No group -> Standard Element Selection
+                setSelectedElement(elementId, fullElement)
+                setSelectedAssembly(null)
+            }
         }
 
         setPointerDown(null)

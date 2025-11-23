@@ -24,6 +24,14 @@ interface AppState {
     selectedElementData: SpeckleObject | null
     setSelectedElement: (id: string | null, data?: SpeckleObject) => void
 
+    // Assembly Selection
+    selectedAssemblyId: string | null
+    setSelectedAssembly: (id: string | null) => void
+
+    // View Mode
+    viewMode: 'standard' | 'dollhouse'
+    setViewMode: (mode: 'standard' | 'dollhouse') => void
+
     // Model Elements
     modelElements: SpeckleObject[]
     setModelElements: (elements: SpeckleObject[]) => void
@@ -72,6 +80,13 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
     selectedElementId: null,
     selectedElementData: null,
+
+    selectedAssemblyId: null,
+    setSelectedAssembly: (id) => set({ selectedAssemblyId: id, isLogOpen: !!id }),
+
+    // View Mode
+    viewMode: 'standard',
+    setViewMode: (mode) => set({ viewMode: mode }),
 
     modelElements: [],
     modelData: {

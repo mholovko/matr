@@ -4,7 +4,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
 import { Model } from './model'
 import dynamic from 'next/dynamic'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { retrofitScopes } from '@/lib/data/scopes'
 import { ScopeMarker } from './scope-marker'
@@ -37,6 +37,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
         }))
     )
     const pathname = usePathname()
+    const dragStart = useRef({ x: 0, y: 0 })
 
     const projectId = process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID
     const elementsModelId = process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID
@@ -45,12 +46,39 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
     const modelId = modelType === 'rooms' ? roomsModelId : elementsModelId
 
     return (
-        <div className="h-full w-full bg-slate-50">
+        <div
+            className="h-full w-full bg-slate-50"
+            onPointerDown={(e) => {
+                dragStart.current = { x: e.clientX, y: e.clientY }
+            }}
+        >
             <ErrorBoundary>
                 <Canvas
                     camera={{ position: [10, 10, 10], fov: 50 }}
-                    onPointerMissed={() => {
-                        setSelectedElement(null)
+                    onPointerMissed={(e) => {
+                        // Prevent deselection if:
+                        // 1. It's not a left click (e.g. right click pan)
+                        // 2. The mouse moved significantly (drag/pan/rotate)
+                        if (e.button !== 0) return
+
+                        const deltaX = Math.abs(e.clientX - dragStart.current.x)
+                        const deltaY = Math.abs(e.clientY - dragStart.current.y)
+                        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+
+                        if (distance > 5) return
+
+                        const state = useAppStore.getState()
+
+                        // 1. If Element is selected, deselect it but keep Assembly (Back to Assembly View)
+                        if (state.selectedElementId) {
+                            setSelectedElement(null)
+                            return
+                        }
+
+                        // 2. If no Element is selected, deselect Assembly and clear filters (Back to Inventory)
+                        state.setSelectedAssembly(null)
+                        state.clearFilters()
+
                         // Also deselect retrofit scope when clicking outside on Retrofit page
                         if (pathname === '/retrofit') {
                             setSelectedRetrofitScope(null)
