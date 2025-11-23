@@ -57,6 +57,16 @@ export function ViewModeToggle() {
                             <span className="w-2 h-2 rounded-full bg-gray-400 shadow-sm" />
                             Shaded
                         </button>
+                        <button
+                            onClick={() => { setRenderMode('technical'); setIsRenderMenuOpen(false) }}
+                            className={cn(
+                                "flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors text-left",
+                                renderMode === 'technical' ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"
+                            )}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-black border border-gray-300 shadow-sm" />
+                            Technical
+                        </button>
                     </div>
                 )}
                 <button

@@ -366,25 +366,76 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 // Only highlight if selection is enabled AND it matches the selected ID
                 const isSelected = enableSelection && child.userData.parentId === selectedElementId
 
-                const material = child.material as THREE.MeshStandardMaterial
+                // Handle Material Swapping for Technical Mode
+                if (renderMode === 'technical') {
+                    // 1. Save original material if not saved
+                    if (!child.userData.originalMaterial) {
+                        child.userData.originalMaterial = child.material
+                    }
 
-                if (isSelected) {
-                    material.color.set('#3b82f6')
-                    // Keep existing roughness/metalness for selected item or maybe make it shiny?
-                    // Let's keep it consistent with the mode for now, just change color
+                    // 2. Assign White Basic Material (Unlit)
+                    // We create a new one or reuse a cached one if we could, but new is safer for now to avoid side effects.
+                    // Actually, we can reuse one global one if we want, but let's just create one per mesh for simplicity or use a static one.
+                    // To avoid memory leaks, we should ideally reuse. But let's just new it up for now, Three.js handles it okay.
+                    // Better: Check if current material is already the basic white one.
+                    if (!(child.material instanceof THREE.MeshBasicMaterial)) {
+                        child.material = new THREE.MeshBasicMaterial({
+                            color: 0xffffff,
+                            side: THREE.DoubleSide // Ensure no backface culling issues for "paper" look
+                        })
+                    }
+
+                    // Ensure it's white
+                    (child.material as THREE.MeshBasicMaterial).color.set(0xffffff)
+
+                    // Handle Edges
+                    const edgeName = '__technical_edge'
+                    let edgeLine = child.children.find(c => c.name === edgeName)
+
+                    if (!edgeLine) {
+                        const edgesGeometry = new THREE.EdgesGeometry(child.geometry, 15)
+                        const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+                        edgeLine = new THREE.LineSegments(edgesGeometry, edgeMaterial)
+                        edgeLine.name = edgeName
+                        child.add(edgeLine)
+                    }
+                    edgeLine.visible = true
+
                 } else {
-                    // Apply Render Mode Styles
-                    if (renderMode === 'rendered') {
-                        material.color.set('#f0f0f0') // Off-white
-                        material.roughness = 1.0
-                        material.metalness = 0.0
+                    // Restore Original Material if needed
+                    if (child.userData.originalMaterial && child.material instanceof THREE.MeshBasicMaterial) {
+                        child.material = child.userData.originalMaterial
+                    }
+
+                    // Now we are back to Standard Material
+                    const material = child.material as THREE.MeshStandardMaterial
+
+                    if (isSelected) {
+                        material.color.set('#3b82f6')
                     } else {
-                        material.color.set('#e2e8f0') // Original Grey
-                        material.roughness = 1.0
-                        material.metalness = 0.0
+                        if (renderMode === 'rendered') {
+                            material.color.set('#f0f0f0')
+                            material.emissive.set('#000000')
+                            material.emissiveIntensity = 0.0
+                            material.roughness = 1.0
+                            material.metalness = 0.0
+                        } else {
+                            material.color.set('#e2e8f0')
+                            material.emissive.set('#000000')
+                            material.emissiveIntensity = 0.0
+                            material.roughness = 1.0
+                            material.metalness = 0.0
+                        }
+                    }
+                    material.needsUpdate = true
+
+                    // Hide edges
+                    const edgeName = '__technical_edge'
+                    const edgeLine = child.children.find(c => c.name === edgeName)
+                    if (edgeLine) {
+                        edgeLine.visible = false
                     }
                 }
-                material.needsUpdate = true
             }
         })
     }, [selectedElementId, sceneGroup, enableSelection, renderMode])

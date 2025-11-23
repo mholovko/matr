@@ -114,6 +114,11 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                                 environmentRotation={[0, THREE.MathUtils.degToRad(-120), 0]}
                             />
                         </>
+                    ) : renderMode === 'technical' ? (
+                        <>
+                            {/* Technical Mode (Pen/CAD) */}
+                            <ambientLight intensity={1.0} />
+                        </>
                     ) : (
                         <>
                             {/* Shaded Mode Lighting (Original) */}
@@ -171,8 +176,8 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                     {pathname === '/retrofit' && <CameraDebugHelper />}
 
 
-                    {/* Optimization: Disable ContactShadows during interaction */}
-                    {!isInteracting && (
+                    {/* Optimization: Disable ContactShadows during interaction or in technical mode */}
+                    {!isInteracting && renderMode !== 'technical' && (
                         <ContactShadows
                             resolution={1024}
                             scale={50}

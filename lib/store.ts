@@ -33,8 +33,8 @@ interface AppState {
     setViewMode: (mode: 'standard' | 'dollhouse') => void
 
     // Render Mode
-    renderMode: 'rendered' | 'shaded'
-    setRenderMode: (mode: 'rendered' | 'shaded') => void
+    renderMode: 'rendered' | 'shaded' | 'technical'
+    setRenderMode: (mode: 'rendered' | 'shaded' | 'technical') => void
 
     // Interaction State
     isInteracting: boolean
