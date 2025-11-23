@@ -36,6 +36,10 @@ interface AppState {
     renderMode: 'rendered' | 'shaded'
     setRenderMode: (mode: 'rendered' | 'shaded') => void
 
+    // Interaction State
+    isInteracting: boolean
+    setIsInteracting: (isInteracting: boolean) => void
+
     // Model Elements
     modelElements: SpeckleObject[]
     setModelElements: (elements: SpeckleObject[]) => void
@@ -95,6 +99,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Render Mode
     renderMode: 'rendered',
     setRenderMode: (mode) => set({ renderMode: mode }),
+
+    // Interaction State (for optimization)
+    isInteracting: false,
+    setIsInteracting: (isInteracting) => set({ isInteracting }),
 
     modelElements: [],
     modelData: {

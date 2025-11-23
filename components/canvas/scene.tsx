@@ -30,12 +30,14 @@ interface SceneProps {
 // CameraAnimator extracted to ./camera-animator.tsx
 
 export function Scene({ modelType = 'elements', enableFiltering = true, enableSelection = true }: SceneProps) {
-    const { setSelectedElement, selectedRetrofitScopeId, setSelectedRetrofitScope, renderMode } = useAppStore(
+    const { setSelectedElement, selectedRetrofitScopeId, setSelectedRetrofitScope, renderMode, setIsInteracting, isInteracting } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             selectedRetrofitScopeId: state.selectedRetrofitScopeId,
             setSelectedRetrofitScope: state.setSelectedRetrofitScope,
             renderMode: state.renderMode,
+            setIsInteracting: state.setIsInteracting,
+            isInteracting: state.isInteracting,
         }))
     )
     const pathname = usePathname()
@@ -93,7 +95,19 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                     {renderMode === 'rendered' ? (
                         <>
                             {/* Rendered Mode Lighting (Arctic/Rhino) */}
-                            <ambientLight intensity={0.5} />
+                            {/* Mimicking Speckle Viewer: Sun + IBL */}
+
+                            {/* Sun Light - Strong Directional Light */}
+                            <directionalLight
+                                position={[10, 20, 10]}
+                                intensity={2.0}
+                                castShadow
+                                shadow-bias={-0.0001}
+                                shadow-mapSize={[2048, 2048]}
+                            />
+
+                            <ambientLight intensity={0.2} />
+
                             <Environment
                                 preset="warehouse"
                                 environmentIntensity={0.5}
@@ -157,17 +171,21 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                     {pathname === '/retrofit' && <CameraDebugHelper />}
 
 
-                    <ContactShadows
-                        resolution={1024}
-                        scale={50}
-                        blur={2}
-                        opacity={renderMode === 'rendered' ? 0.1 : 0.4}
-                        far={10}
-                        color="#000000"
-                    />
+                    {/* Optimization: Disable ContactShadows during interaction */}
+                    {!isInteracting && (
+                        <ContactShadows
+                            resolution={1024}
+                            scale={50}
+                            blur={2}
+                            opacity={renderMode === 'rendered' ? 0.1 : 0.4}
+                            far={10}
+                            color="#000000"
+                        />
+                    )}
                     <BakeShadows />
 
-                    {renderMode === 'rendered' && (
+                    {/* Optimization: Disable AO during interaction */}
+                    {renderMode === 'rendered' && !isInteracting && (
                         <EffectComposer multisampling={8}>
                             <N8AO
                                 aoRadius={50}
@@ -179,7 +197,11 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                         </EffectComposer>
                     )}
 
-                    <OrbitControls makeDefault />
+                    <OrbitControls
+                        makeDefault
+                        onStart={() => setIsInteracting(true)}
+                        onEnd={() => setIsInteracting(false)}
+                    />
                 </Canvas>
             </ErrorBoundary>
         </div>
