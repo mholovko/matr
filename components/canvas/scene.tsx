@@ -42,6 +42,8 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
     )
     const pathname = usePathname()
     const dragStart = useRef({ x: 0, y: 0 })
+    const navigationStart = useRef({ x: 0, y: 0 })
+    const isOrbitDragging = useRef(false)
 
     const projectId = process.env.NEXT_PUBLIC_SPECKLE_PROJECT_ID
     const elementsModelId = process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID
@@ -49,11 +51,32 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
 
     const modelId = modelType === 'rooms' ? roomsModelId : elementsModelId
 
+    useEffect(() => {
+        const handlePointerMove = (e: PointerEvent) => {
+            // If orbit control is dragging and mouse has moved, mark it
+            if (isOrbitDragging.current) {
+                const deltaX = Math.abs(e.clientX - navigationStart.current.x)
+                const deltaY = Math.abs(e.clientY - navigationStart.current.y)
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+
+                // Only count as interaction if moved more than 3px
+                if (distance > 3) {
+                    setIsInteracting(true)
+                    navigationStart.current = { x: e.clientX, y: e.clientY }
+                }
+            }
+        }
+
+        window.addEventListener('pointermove', handlePointerMove)
+        return () => window.removeEventListener('pointermove', handlePointerMove)
+    }, [setIsInteracting])
+
     return (
         <div
             className="h-full w-full bg-white"
             onPointerDown={(e) => {
                 dragStart.current = { x: e.clientX, y: e.clientY }
+                navigationStart.current = { x: e.clientX, y: e.clientY }
             }}
         >
             <ErrorBoundary>
@@ -204,8 +227,14 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
 
                     <OrbitControls
                         makeDefault
-                        onStart={() => setIsInteracting(true)}
-                        onEnd={() => setIsInteracting(false)}
+                        onStart={() => {
+                            isOrbitDragging.current = true
+                            navigationStart.current = { x: 0, y: 0 }
+                        }}
+                        onEnd={() => {
+                            isOrbitDragging.current = false
+                            setIsInteracting(false)
+                        }}
                     />
                 </Canvas>
             </ErrorBoundary>
