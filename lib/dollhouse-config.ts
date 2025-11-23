@@ -4,10 +4,10 @@ export type DollhouseSide = 'FRONT' | 'BACK' | 'LEFT' | 'RIGHT' | 'TOP'
 
 // TODO: Update these with actual group names from the model
 export const DOLLHOUSE_CONFIG: Record<DollhouseSide, string[]> = {
-    FRONT: ['Shared-Wall-1'],
-    BACK: [],
-    LEFT: ['Ext-Wall-1'],
-    RIGHT: ['Ext-Wall-2'],
+    FRONT: ['shared-wall-1'],
+    BACK: ['shared-wall-2', 'ext-wall-3'],
+    LEFT: ['ext-wall-1'],
+    RIGHT: ['ext-wall-2', 'ext-wall-4'],
     TOP: ['Roof']
 }
 
