@@ -34,6 +34,7 @@ export function MobileDrawer({ children }: { children: React.ReactNode }) {
                 dismissible={false}
             >
                 <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-background border-t border-border rounded-t-[10px] h-[96%] shadow-2xl outline-none pointer-events-auto">
+                    <Drawer.Title className="sr-only">Mobile Dashboard</Drawer.Title>
                     {/* Handle */}
                     <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted my-4 cursor-grab active:cursor-grabbing" />
 
