@@ -97,7 +97,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                                     modelId={elementsModelId}
                                     visible={modelType === 'elements'}
                                     enableFiltering={enableFiltering}
-                                    enableSelection={enableSelection}
+                                    enableSelection={enableSelection && modelType === 'elements'}
                                 />
                             )}
 
@@ -109,7 +109,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                                     visible={modelType === 'rooms'}
                                     renderBackFaces={true}
                                     enableFiltering={enableFiltering}
-                                    enableSelection={enableSelection}
+                                    enableSelection={enableSelection && modelType === 'rooms'}
                                 />
                             )}
                         </>
