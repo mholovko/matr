@@ -381,12 +381,18 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                     if (!(child.material instanceof THREE.MeshBasicMaterial)) {
                         child.material = new THREE.MeshBasicMaterial({
                             color: 0xffffff,
-                            side: THREE.DoubleSide // Ensure no backface culling issues for "paper" look
+                            side: THREE.DoubleSide, // Ensure no backface culling issues for "paper" look
+                            toneMapped: false // Disable tone mapping to ensure pure white
                         })
                     }
 
-                    // Ensure it's white
-                    (child.material as THREE.MeshBasicMaterial).color.set(0xffffff)
+                    // Ensure it's white (or selected color) and tone mapping is off
+                    if (isSelected) {
+                        (child.material as THREE.MeshBasicMaterial).color.set('#3b82f6');
+                    } else {
+                        (child.material as THREE.MeshBasicMaterial).color.set(0xffffff);
+                    }
+                    (child.material as THREE.MeshBasicMaterial).toneMapped = false;
 
                     // Handle Edges
                     const edgeName = '__technical_edge'
