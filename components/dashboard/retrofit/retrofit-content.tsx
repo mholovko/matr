@@ -5,7 +5,7 @@ import { Calendar, DollarSign, Activity, ChevronDown, ChevronUp, ArrowLeft, Laye
 import { cn } from "@/lib/utils"
 import { retrofitScopes, type RetrofitScope } from "@/lib/data/scopes"
 import { feedEvents } from "@/lib/data/feed"
-import { FeedItem } from "./feed-item"
+import { FeedItem } from "../feed/feed-item"
 
 import { useAppStore } from "@/lib/store"
 

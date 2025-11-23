@@ -1,8 +1,8 @@
 "use client"
 
-import { FeedPanel } from "@/components/dashboard/feed-panel"
+import { FeedPanel } from "@/components/dashboard/feed/feed-panel"
 import { MobileDrawer } from "@/components/dashboard/mobile-drawer"
-import { FeedContent } from "@/components/dashboard/feed-content"
+import { FeedContent } from "@/components/dashboard/feed/feed-content"
 
 export function FeedClient() {
     return (

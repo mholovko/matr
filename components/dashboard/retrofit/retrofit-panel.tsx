@@ -5,7 +5,7 @@ import { ChevronsRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { retrofitScopes } from "@/lib/data/scopes"
 import { useAppStore } from "@/lib/store"
-import { CameraDebugUI } from "./camera-debug-ui"
+import { CameraDebugUI } from "../camera-debug-ui"
 import { RetrofitContent } from "./retrofit-content"
 
 export function RetrofitPanel() {

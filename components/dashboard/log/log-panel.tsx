@@ -3,7 +3,7 @@ import { ChevronsRight } from "lucide-react"
 import { useAppStore } from "@/lib/store"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { FilterControls } from "./filter-controls"
+import { FilterControls } from "../filter-controls"
 import { LogContent } from "./log-content"
 
 export function LogPanel() {

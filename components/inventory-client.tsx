@@ -1,8 +1,8 @@
 "use client"
 
-import { LogPanel } from "@/components/dashboard/log-panel"
+import { LogPanel } from "@/components/dashboard/log/log-panel"
 import { MobileDrawer } from "@/components/dashboard/mobile-drawer"
-import { LogContent } from "@/components/dashboard/log-content"
+import { LogContent } from "@/components/dashboard/log/log-content"
 import { FilterControls } from "@/components/dashboard/filter-controls"
 import { useAppStore } from "@/lib/store"
 

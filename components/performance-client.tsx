@@ -1,8 +1,8 @@
 "use client"
 
-import { PerformancePanel } from "@/components/dashboard/performance-panel"
+import { PerformancePanel } from "@/components/dashboard/performance/performance-panel"
 import { MobileDrawer } from "@/components/dashboard/mobile-drawer"
-import { PerformanceContent } from "@/components/dashboard/performance-content"
+import { PerformanceContent } from "@/components/dashboard/performance/performance-content"
 
 export function PerformanceClient() {
     return (

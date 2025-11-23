@@ -3,8 +3,7 @@
 import { Drawer } from "vaul"
 import { useAppStore } from "@/lib/store"
 import { useState, useEffect } from "react"
-import { LogContent } from "./log-content"
-import { FilterControls } from "./filter-controls"
+
 import { cn } from "@/lib/utils"
 
 export function MobileDrawer({ children }: { children: React.ReactNode }) {
