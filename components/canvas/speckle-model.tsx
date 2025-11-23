@@ -155,7 +155,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
     }, [sceneGroup])
 
     // Dollhouse Logic
-    const [currentSector, setCurrentSector] = useState<DollhouseSide | null>(null)
+    const [currentSector, setCurrentSector] = useState<DollhouseSide[]>([])
     const { viewMode } = useAppStore(useShallow(state => ({ viewMode: state.viewMode })))
 
     // Update sector based on camera position
@@ -168,7 +168,9 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         // Simple throttling or check every frame? 
         // For smoothness, every frame is fine, but state update only on change
         const newSector = getSectorFromCamera(camera, target)
-        if (newSector !== currentSector) {
+
+        // Array comparison
+        if (newSector.length !== currentSector.length || !newSector.every((val, index) => val === currentSector[index])) {
             setCurrentSector(newSector)
         }
     })
@@ -189,7 +191,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         }
 
         const hasFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
-        const isDollhouse = viewMode === 'dollhouse' && currentSector && !selectedAssemblyId
+        const isDollhouse = viewMode === 'dollhouse' && currentSector.length > 0 && !selectedAssemblyId
 
         let visibleCount = 0
         let hiddenCount = 0
@@ -208,12 +210,14 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
                 // DOLLHOUSE VISIBILITY CHECK
                 let isHiddenByDollhouse = false
-                if (isDollhouse && groupName && currentSector) {
-                    const hiddenGroups = DOLLHOUSE_CONFIG[currentSector]
-
-                    // Debug log for specific groups to check matching
-                    if (hiddenGroups.includes(groupName)) {
-                        isHiddenByDollhouse = true
+                if (isDollhouse && groupName) {
+                    // Check if group is hidden in ANY of the current sectors
+                    for (const sector of currentSector) {
+                        const hiddenGroups = DOLLHOUSE_CONFIG[sector]
+                        if (hiddenGroups.includes(groupName)) {
+                            isHiddenByDollhouse = true
+                            break
+                        }
                     }
                 }
 

@@ -11,7 +11,7 @@ export const DOLLHOUSE_CONFIG: Record<DollhouseSide, string[]> = {
     TOP: ['Roof', 'Ceiling-Level-2']
 }
 
-export function getSectorFromCamera(camera: THREE.Camera, target: THREE.Vector3 = new THREE.Vector3(0, 0, 0)): DollhouseSide {
+export function getSectorFromCamera(camera: THREE.Camera, target: THREE.Vector3 = new THREE.Vector3(0, 0, 0)): DollhouseSide[] {
     const position = camera.position.clone().sub(target)
 
     // Check for Top view (high angle)
@@ -22,30 +22,36 @@ export function getSectorFromCamera(camera: THREE.Camera, target: THREE.Vector3 
     // If angle is > 45 degrees from horizontal, consider it TOP
     // tan(45) = 1.0
     if (position.y > horizontalDistance * 1.0) {
-        return 'TOP'
+        return ['TOP']
     }
 
     // Determine quadrant based on X and Z
     // +Z = Front (0 degrees)
-    // +X = Right (-90 degrees)
+    // +X = Right (90 degrees)
     // -Z = Back (180 degrees)
-    // -X = Left (90 degrees)
+    // -X = Left (-90 degrees)
 
     const angle = Math.atan2(position.x, position.z) // Returns -PI to PI
     const degrees = angle * (180 / Math.PI)
 
-    // Sectors (45 degree offset)
-    // Front (+Z): -45 to 45
-    // Left (+X): 45 to 135  <-- Wait, atan2(x, z): x=1, z=0 -> 90 deg. x=0, z=1 -> 0 deg.
-    // So:
-    // 0 deg = +Z (Front)
-    // 90 deg = +X (Right)
-    // 180/-180 deg = -Z (Back)
-    // -90 deg = -X (Left)
+    // 8-way split (45 degrees each sector)
+    // Front: -22.5 to 22.5
+    // Front-Right: 22.5 to 67.5
+    // Right: 67.5 to 112.5
+    // Back-Right: 112.5 to 157.5
+    // Back: 157.5 to 180 OR -180 to -157.5
+    // Back-Left: -157.5 to -112.5
+    // Left: -112.5 to -67.5
+    // Front-Left: -67.5 to -22.5
 
-    if (degrees >= -45 && degrees < 45) return 'FRONT'
-    if (degrees >= 45 && degrees < 135) return 'RIGHT'
-    if (degrees >= -135 && degrees < -45) return 'LEFT'
+    if (degrees >= -22.5 && degrees < 22.5) return ['FRONT']
+    if (degrees >= 22.5 && degrees < 67.5) return ['FRONT', 'RIGHT']
+    if (degrees >= 67.5 && degrees < 112.5) return ['RIGHT']
+    if (degrees >= 112.5 && degrees < 157.5) return ['BACK', 'RIGHT']
+    if (degrees >= 157.5 || degrees < -157.5) return ['BACK']
+    if (degrees >= -157.5 && degrees < -112.5) return ['BACK', 'LEFT']
+    if (degrees >= -112.5 && degrees < -67.5) return ['LEFT']
+    if (degrees >= -67.5 && degrees < -22.5) return ['FRONT', 'LEFT']
 
-    return 'BACK'
+    return ['BACK'] // Fallback
 }
