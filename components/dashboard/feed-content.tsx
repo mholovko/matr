@@ -4,13 +4,15 @@ import { cn } from "@/lib/utils"
 import { feedEvents, type FeedEvent } from "@/lib/data/feed"
 import { FeedItem } from "./feed-item"
 
-interface FeedContentProps {
-    filterType: FeedEvent['type'] | 'all'
-    setFilterType: (type: FeedEvent['type'] | 'all') => void
-    filteredEvents: FeedEvent[]
-}
+import { useAppStore } from "@/lib/store"
 
-export function FeedContent({ filterType, setFilterType, filteredEvents }: FeedContentProps) {
+export function FeedContent() {
+    const { feedFilterType, setFeedFilterType } = useAppStore()
+
+    const filteredEvents = feedEvents.filter(event => {
+        if (feedFilterType !== 'all' && event.type !== feedFilterType) return false
+        return true
+    })
     return (
         <>
             {/* Filter Section */}
@@ -20,10 +22,10 @@ export function FeedContent({ filterType, setFilterType, filteredEvents }: FeedC
                 </div>
                 <div className="flex flex-wrap gap-1">
                     <button
-                        onClick={() => setFilterType('all')}
+                        onClick={() => setFeedFilterType('all')}
                         className={cn(
                             "px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-colors border",
-                            filterType === 'all'
+                            feedFilterType === 'all'
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : "bg-background text-muted-foreground border-border hover:border-primary/50"
                         )}
@@ -33,10 +35,10 @@ export function FeedContent({ filterType, setFilterType, filteredEvents }: FeedC
                     {(['construction', 'meeting', 'decision', 'delivery', 'survey', 'milestone'] as const).map((type) => (
                         <button
                             key={type}
-                            onClick={() => setFilterType(type)}
+                            onClick={() => setFeedFilterType(type)}
                             className={cn(
                                 "px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-colors border",
-                                filterType === type
+                                feedFilterType === type
                                     ? "bg-primary text-primary-foreground border-primary"
                                     : "bg-background text-muted-foreground border-border hover:border-primary/50"
                             )}

@@ -4,9 +4,11 @@ import { cn } from "@/lib/utils"
 import { type RoomPerformanceData } from "@/lib/data/performance"
 import { PerformanceContent } from "./performance-content"
 
+import { useAppStore } from "@/lib/store"
+
 export function PerformancePanel() {
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const [selectedRoom, setSelectedRoom] = useState<RoomPerformanceData | null>(null)
+    const { performanceSelectedRoom } = useAppStore()
 
     return (
         <aside
@@ -22,7 +24,7 @@ export function PerformancePanel() {
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-primary animate-pulse" />
                         <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-                            {selectedRoom ? selectedRoom.roomName : "Room Performance"}
+                            {performanceSelectedRoom ? performanceSelectedRoom.roomName : "Room Performance"}
                         </h3>
                     </div>
                 )}
@@ -39,7 +41,7 @@ export function PerformancePanel() {
 
             {!isCollapsed && (
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <PerformanceContent selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} />
+                    <PerformanceContent />
                 </div>
             )}
         </aside>

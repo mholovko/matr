@@ -6,13 +6,6 @@ import { FeedContent } from "./feed-content"
 
 export function FeedPanel() {
     const [isCollapsed, setIsCollapsed] = useState(false)
-    const [filterType, setFilterType] = useState<FeedEvent['type'] | 'all'>('all')
-
-    const filteredEvents = feedEvents.filter(event => {
-        // Filter by type
-        if (filterType !== 'all' && event.type !== filterType) return false
-        return true
-    })
 
     return (
         <aside
@@ -44,11 +37,7 @@ export function FeedPanel() {
             </div>
 
             {!isCollapsed && (
-                <FeedContent
-                    filterType={filterType}
-                    setFilterType={setFilterType}
-                    filteredEvents={filteredEvents}
-                />
+                <FeedContent />
             )}
         </aside>
     )

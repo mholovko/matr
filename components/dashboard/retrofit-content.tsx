@@ -7,12 +7,10 @@ import { retrofitScopes, type RetrofitScope } from "@/lib/data/scopes"
 import { feedEvents } from "@/lib/data/feed"
 import { FeedItem } from "./feed-item"
 
-interface RetrofitContentProps {
-    selectedRetrofitScopeId: string | null
-    setSelectedRetrofitScope: (id: string | null) => void
-}
+import { useAppStore } from "@/lib/store"
 
-export function RetrofitContent({ selectedRetrofitScopeId, setSelectedRetrofitScope }: RetrofitContentProps) {
+export function RetrofitContent() {
+    const { selectedRetrofitScopeId, setSelectedRetrofitScope } = useAppStore()
     const [expandedScenarios, setExpandedScenarios] = useState(false)
 
     // Derived state for selected scope

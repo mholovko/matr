@@ -4,12 +4,10 @@ import { ChevronsRight, Activity, Wind, Droplets, Thermometer, ArrowLeft } from 
 import { cn } from "@/lib/utils"
 import { roomPerformanceData, type RoomPerformanceData } from "@/lib/data/performance"
 
-interface PerformanceContentProps {
-    selectedRoom: RoomPerformanceData | null
-    setSelectedRoom: (room: RoomPerformanceData | null) => void
-}
+import { useAppStore } from "@/lib/store"
 
-export function PerformanceContent({ selectedRoom, setSelectedRoom }: PerformanceContentProps) {
+export function PerformanceContent() {
+    const { performanceSelectedRoom, setPerformanceSelectedRoom } = useAppStore()
     const getStatusColor = (status: 'good' | 'moderate' | 'poor') => {
         switch (status) {
             case 'good': return 'bg-emerald-500'
@@ -18,7 +16,7 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
         }
     }
 
-    if (selectedRoom) {
+    if (performanceSelectedRoom) {
         // SELECTED ROOM DETAILS
         return (
             <div>
@@ -26,7 +24,7 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
                 <section>
                     <div className="p-3 bg-muted/5 border-b border-border">
                         <button
-                            onClick={() => setSelectedRoom(null)}
+                            onClick={() => setPerformanceSelectedRoom(null)}
                             className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-3 group"
                         >
                             <ArrowLeft className="h-3 w-3 transition-transform group-hover:-translate-x-0.5" />
@@ -39,12 +37,12 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
                     </div>
                     <div className="p-4">
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold font-mono text-foreground">{selectedRoom.metrics.co2.value}</span>
-                            <span className="text-xs font-bold uppercase text-muted-foreground">{selectedRoom.metrics.co2.unit}</span>
+                            <span className="text-4xl font-bold font-mono text-foreground">{performanceSelectedRoom.metrics.co2.value}</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground">{performanceSelectedRoom.metrics.co2.unit}</span>
                         </div>
                         <div className="mt-2 flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedRoom.metrics.co2.status))} />
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{selectedRoom.metrics.co2.status}</span>
+                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(performanceSelectedRoom.metrics.co2.status))} />
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{performanceSelectedRoom.metrics.co2.status}</span>
                         </div>
                     </div>
                 </section>
@@ -61,20 +59,20 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
                         <div className="space-y-2 font-mono text-xs">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">PM1:</span>
-                                <span className="font-bold text-foreground">{selectedRoom.metrics.airQuality.pm1} {selectedRoom.metrics.airQuality.unit}</span>
+                                <span className="font-bold text-foreground">{performanceSelectedRoom.metrics.airQuality.pm1} {performanceSelectedRoom.metrics.airQuality.unit}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">PM2.5:</span>
-                                <span className="font-bold text-foreground">{selectedRoom.metrics.airQuality.pm25} {selectedRoom.metrics.airQuality.unit}</span>
+                                <span className="font-bold text-foreground">{performanceSelectedRoom.metrics.airQuality.pm25} {performanceSelectedRoom.metrics.airQuality.unit}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">PM10:</span>
-                                <span className="font-bold text-foreground">{selectedRoom.metrics.airQuality.pm10} {selectedRoom.metrics.airQuality.unit}</span>
+                                <span className="font-bold text-foreground">{performanceSelectedRoom.metrics.airQuality.pm10} {performanceSelectedRoom.metrics.airQuality.unit}</span>
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedRoom.metrics.airQuality.status))} />
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{selectedRoom.metrics.airQuality.status}</span>
+                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(performanceSelectedRoom.metrics.airQuality.status))} />
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{performanceSelectedRoom.metrics.airQuality.status}</span>
                         </div>
                     </div>
                 </section>
@@ -89,12 +87,12 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
                     </div>
                     <div className="p-4">
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold font-mono text-foreground">{selectedRoom.metrics.temperature.value}</span>
-                            <span className="text-xs font-bold uppercase text-muted-foreground">{selectedRoom.metrics.temperature.unit}</span>
+                            <span className="text-4xl font-bold font-mono text-foreground">{performanceSelectedRoom.metrics.temperature.value}</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground">{performanceSelectedRoom.metrics.temperature.unit}</span>
                         </div>
                         <div className="mt-2 flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedRoom.metrics.temperature.status))} />
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{selectedRoom.metrics.temperature.status}</span>
+                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(performanceSelectedRoom.metrics.temperature.status))} />
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{performanceSelectedRoom.metrics.temperature.status}</span>
                         </div>
                     </div>
                 </section>
@@ -109,12 +107,12 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
                     </div>
                     <div className="p-4">
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold font-mono text-foreground">{selectedRoom.metrics.humidity.value}</span>
-                            <span className="text-xs font-bold uppercase text-muted-foreground">{selectedRoom.metrics.humidity.unit}</span>
+                            <span className="text-4xl font-bold font-mono text-foreground">{performanceSelectedRoom.metrics.humidity.value}</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground">{performanceSelectedRoom.metrics.humidity.unit}</span>
                         </div>
                         <div className="mt-2 flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(selectedRoom.metrics.humidity.status))} />
-                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{selectedRoom.metrics.humidity.status}</span>
+                            <div className={cn("w-2 h-2 rounded-full", getStatusColor(performanceSelectedRoom.metrics.humidity.status))} />
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{performanceSelectedRoom.metrics.humidity.status}</span>
                         </div>
                     </div>
                 </section>
@@ -122,7 +120,7 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
                 {/* Last Updated */}
                 <div className="p-4 border-t border-border">
                     <div className="text-[10px] text-muted-foreground font-mono text-center uppercase tracking-wider">
-                        Last updated: {new Date(selectedRoom.lastUpdated).toLocaleString()}
+                        Last updated: {new Date(performanceSelectedRoom.lastUpdated).toLocaleString()}
                     </div>
                 </div>
             </div>
@@ -141,7 +139,7 @@ export function PerformanceContent({ selectedRoom, setSelectedRoom }: Performanc
                 {roomPerformanceData.map((room) => (
                     <button
                         key={room.roomId}
-                        onClick={() => setSelectedRoom(room)}
+                        onClick={() => setPerformanceSelectedRoom(room)}
                         className="w-full text-left p-3 hover:bg-muted/50 rounded border border-transparent hover:border-border transition-all group"
                     >
                         <div className="flex items-center justify-between mb-2">

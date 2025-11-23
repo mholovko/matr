@@ -55,10 +55,7 @@ export function RetrofitPanel() {
 
             {!isCollapsed && (
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <RetrofitContent
-                        selectedRetrofitScopeId={selectedRetrofitScopeId}
-                        setSelectedRetrofitScope={setSelectedRetrofitScope}
-                    />
+                    <RetrofitContent />
                 </div>
             )}
 

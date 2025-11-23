@@ -2,21 +2,16 @@
 import { Box, Layers, Activity, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface LogContentProps {
-    selectedElementId: string | null
-    selectedElementData: any
-    setSelectedElement: (id: string | null) => void
-    activeTab: "materials" | "carbon" | "docs"
-    setActiveTab: (tab: "materials" | "carbon" | "docs") => void
-}
+import { useAppStore } from "@/lib/store"
 
-export function LogContent({
-    selectedElementId,
-    selectedElementData,
-    setSelectedElement,
-    activeTab,
-    setActiveTab
-}: LogContentProps) {
+export function LogContent() {
+    const {
+        selectedElementId,
+        selectedElementData,
+        setSelectedElement,
+        logActiveTab,
+        setLogActiveTab
+    } = useAppStore()
     // Extract element info from selectedElementData
     const elementName = selectedElementData?.name ||
         selectedElementData?.properties?.Parameters?.["Instance Parameters"]?.Other?.["Family and Type"]?.value ||
@@ -108,10 +103,10 @@ export function LogContent({
                     ).map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
+                            onClick={() => setLogActiveTab(tab.id)}
                             className={cn(
                                 "flex items-center justify-center gap-2 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors border-r border-border last:border-r-0",
-                                activeTab === tab.id
+                                logActiveTab === tab.id
                                     ? "bg-primary text-primary-foreground"
                                     : "bg-background text-muted-foreground hover:bg-muted"
                             )}
@@ -124,7 +119,7 @@ export function LogContent({
 
                 {/* Content */}
                 <div className="p-0">
-                    {activeTab === "materials" && (
+                    {logActiveTab === "materials" && (
                         <section>
                             <div className="p-3 bg-muted/5 border-b border-border">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Materials & Dimensions</span>
@@ -193,7 +188,7 @@ export function LogContent({
                         </section>
                     )}
 
-                    {activeTab === "carbon" && (
+                    {logActiveTab === "carbon" && (
                         <section>
                             <div className="p-3 bg-muted/5 border-b border-border">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Impact Analysis</span>
@@ -207,7 +202,7 @@ export function LogContent({
                         </section>
                     )}
 
-                    {activeTab === "docs" && (
+                    {logActiveTab === "docs" && (
                         <section>
                             <div className="p-3 bg-muted/5 border-b border-border">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Documentation</span>

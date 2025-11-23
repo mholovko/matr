@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { SpeckleObject } from '@/lib/speckle/types'
+import { FeedEvent } from '@/lib/data/feed'
+import { RoomPerformanceData } from '@/lib/data/performance'
 
 interface FilterState {
     categories: string[]
@@ -36,9 +38,18 @@ interface AppState {
     toggleGroupFilter: (group: string) => void
     clearFilters: () => void
 
-    // UI State
     isLogOpen: boolean
     toggleLog: (isOpen: boolean) => void
+    logActiveTab: 'materials' | 'carbon' | 'docs'
+    setLogActiveTab: (tab: 'materials' | 'carbon' | 'docs') => void
+
+    // Feed State
+    feedFilterType: 'all' | FeedEvent['type']
+    setFeedFilterType: (type: 'all' | FeedEvent['type']) => void
+
+    // Performance State
+    performanceSelectedRoom: RoomPerformanceData | null
+    setPerformanceSelectedRoom: (room: RoomPerformanceData | null) => void
 
     // Retrofit Selection
     selectedRetrofitScopeId: string | null
@@ -79,6 +90,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     },
 
     isLogOpen: false,
+    logActiveTab: 'materials',
+    setLogActiveTab: (tab) => set({ logActiveTab: tab }),
+
+    feedFilterType: 'all',
+    setFeedFilterType: (type) => set({ feedFilterType: type }),
+
+    performanceSelectedRoom: null,
+    setPerformanceSelectedRoom: (room) => set({ performanceSelectedRoom: room }),
 
     isLoading: false,
     loadingProgress: 0,

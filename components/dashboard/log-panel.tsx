@@ -7,8 +7,7 @@ import { FilterControls } from "./filter-controls"
 import { LogContent } from "./log-content"
 
 export function LogPanel() {
-    const { selectedElementId, selectedElementData, setSelectedElement } = useAppStore()
-    const [activeTab, setActiveTab] = useState<"materials" | "carbon" | "docs">("materials")
+    const { selectedElementId } = useAppStore()
     const [isCollapsed, setIsCollapsed] = useState(false)
 
     return (
@@ -45,13 +44,7 @@ export function LogPanel() {
                 <>
                     {selectedElementId ? (
                         // ELEMENT DETAILS MODE
-                        <LogContent
-                            selectedElementId={selectedElementId}
-                            selectedElementData={selectedElementData}
-                            setSelectedElement={setSelectedElement}
-                            activeTab={activeTab}
-                            setActiveTab={setActiveTab}
-                        />
+                        <LogContent />
                     ) : (
                         // FILTER MODE
                         <FilterControls />
