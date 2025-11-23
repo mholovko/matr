@@ -32,6 +32,10 @@ interface AppState {
     viewMode: 'standard' | 'dollhouse'
     setViewMode: (mode: 'standard' | 'dollhouse') => void
 
+    // Render Mode
+    renderMode: 'rendered' | 'shaded'
+    setRenderMode: (mode: 'rendered' | 'shaded') => void
+
     // Model Elements
     modelElements: SpeckleObject[]
     setModelElements: (elements: SpeckleObject[]) => void
@@ -87,6 +91,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     // View Mode
     viewMode: 'standard',
     setViewMode: (mode) => set({ viewMode: mode }),
+
+    // Render Mode
+    renderMode: 'rendered',
+    setRenderMode: (mode) => set({ renderMode: mode }),
 
     modelElements: [],
     modelData: {

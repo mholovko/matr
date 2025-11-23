@@ -23,7 +23,7 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId } = useAppStore(
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             setLoading: state.setLoading,
@@ -31,6 +31,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             setModelElements: state.setModelElements,
             filters: state.filters,
             selectedAssemblyId: state.selectedAssemblyId,
+            renderMode: state.renderMode,
         }))
     )
     const { controls } = useThree()
@@ -364,13 +365,29 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
                 // Only highlight if selection is enabled AND it matches the selected ID
                 const isSelected = enableSelection && child.userData.parentId === selectedElementId
-                    // Reset color or highlight
-                    ; (child.material as THREE.MeshStandardMaterial).color.set(
-                        isSelected ? '#3b82f6' : '#e2e8f0'
-                    )
+
+                const material = child.material as THREE.MeshStandardMaterial
+
+                if (isSelected) {
+                    material.color.set('#3b82f6')
+                    // Keep existing roughness/metalness for selected item or maybe make it shiny?
+                    // Let's keep it consistent with the mode for now, just change color
+                } else {
+                    // Apply Render Mode Styles
+                    if (renderMode === 'rendered') {
+                        material.color.set('#f0f0f0') // Off-white
+                        material.roughness = 1.0
+                        material.metalness = 0.0
+                    } else {
+                        material.color.set('#e2e8f0') // Original Grey
+                        material.roughness = 1.0
+                        material.metalness = 0.0
+                    }
+                }
+                material.needsUpdate = true
             }
         })
-    }, [selectedElementId, sceneGroup, enableSelection])
+    }, [selectedElementId, sceneGroup, enableSelection, renderMode])
 
     if (!sceneGroup) return null
 

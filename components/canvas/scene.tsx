@@ -1,7 +1,8 @@
 "use client"
 
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Environment, ContactShadows, Bounds, BakeShadows } from '@react-three/drei'
+import { EffectComposer, N8AO, SMAA, ToneMapping, TiltShift2 } from '@react-three/postprocessing'
 import { Model } from './model'
 import dynamic from 'next/dynamic'
 import { useEffect, useRef } from 'react'
@@ -29,11 +30,12 @@ interface SceneProps {
 // CameraAnimator extracted to ./camera-animator.tsx
 
 export function Scene({ modelType = 'elements', enableFiltering = true, enableSelection = true }: SceneProps) {
-    const { setSelectedElement, selectedRetrofitScopeId, setSelectedRetrofitScope } = useAppStore(
+    const { setSelectedElement, selectedRetrofitScopeId, setSelectedRetrofitScope, renderMode } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             selectedRetrofitScopeId: state.selectedRetrofitScopeId,
             setSelectedRetrofitScope: state.setSelectedRetrofitScope,
+            renderMode: state.renderMode,
         }))
     )
     const pathname = usePathname()
@@ -47,14 +49,15 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
 
     return (
         <div
-            className="h-full w-full bg-slate-50"
+            className="h-full w-full bg-white"
             onPointerDown={(e) => {
                 dragStart.current = { x: e.clientX, y: e.clientY }
             }}
         >
             <ErrorBoundary>
                 <Canvas
-                    camera={{ position: [-10, 10, 10], fov: 50 }}
+                    shadows
+                    camera={{ position: [-10, 10, 10], fov: 45 }}
                     onPointerMissed={(e) => {
                         // Prevent deselection if:
                         // 1. It's not a left click (e.g. right click pan)
@@ -85,8 +88,26 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                         }
                     }}
                 >
-                    <ambientLight intensity={0.5} />
-                    <pointLight position={[10, 10, 10]} />
+                    <color attach="background" args={['#ffffff']} />
+
+                    {renderMode === 'rendered' ? (
+                        <>
+                            {/* Rendered Mode Lighting (Arctic/Rhino) */}
+                            <ambientLight intensity={0.5} />
+                            <Environment
+                                preset="warehouse"
+                                environmentIntensity={0.5}
+                                environmentRotation={[0, THREE.MathUtils.degToRad(-120), 0]}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            {/* Shaded Mode Lighting (Original) */}
+                            <ambientLight intensity={0.5} />
+                            <pointLight position={[10, 10, 10]} intensity={1} />
+                            <Environment preset="city" />
+                        </>
+                    )}
 
                     {projectId && (
                         <>
@@ -136,8 +157,28 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                     {pathname === '/retrofit' && <CameraDebugHelper />}
 
 
-                    <ContactShadows opacity={0.4} scale={40} blur={2} far={4.5} />
-                    <Environment preset="city" />
+                    <ContactShadows
+                        resolution={1024}
+                        scale={50}
+                        blur={2}
+                        opacity={renderMode === 'rendered' ? 0.1 : 0.4}
+                        far={10}
+                        color="#000000"
+                    />
+                    <BakeShadows />
+
+                    {renderMode === 'rendered' && (
+                        <EffectComposer multisampling={8}>
+                            <N8AO
+                                aoRadius={50}
+                                distanceFalloff={0.2}
+                                intensity={3}
+                                screenSpaceRadius
+                                halfRes
+                            />
+                        </EffectComposer>
+                    )}
+
                     <OrbitControls makeDefault />
                 </Canvas>
             </ErrorBoundary>
