@@ -28,6 +28,7 @@ export interface RetrofitScope {
     relatedElements?: string[] // IDs of BIM elements
     cameraPosition?: { x: number; y: number; z: number }
     markerPosition?: { x: number; y: number; z: number } // Also used as camera target
+    enableDollhouse?: boolean // Whether to enable Dollhouse mode for this viewpoint
 }
 
 export const retrofitScopes: RetrofitScope[] = [
@@ -65,7 +66,8 @@ export const retrofitScopes: RetrofitScope[] = [
         selectedScenario: 'lime-render',
         relatedElements: ['wall-external-front', 'wall-external-side'],
         cameraPosition: { x: 8.29, y: 162.72, z: -11.31 },
-        markerPosition: { x: 0.02, y: 160.28, z: -2.66 }
+        markerPosition: { x: 0.02, y: 160.28, z: -2.66 },
+        enableDollhouse: true
     },
     {
         id: 'external-wall-insulation',
@@ -166,7 +168,8 @@ export const retrofitScopes: RetrofitScope[] = [
         ],
         relatedElements: ['windows-all'],
         cameraPosition: { x: -6.67, y: 157.93, z: -2.48 },
-        markerPosition: { x: -0.09, y: 157.46, z: -2.15 }
+        markerPosition: { x: -0.09, y: 157.46, z: -2.15 },
+        enableDollhouse: false
     },
     {
         id: 'loft-insulation',

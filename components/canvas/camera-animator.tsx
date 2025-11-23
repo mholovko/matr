@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { useThree } from '@react-three/fiber'
 import { retrofitScopes } from '@/lib/data/scopes'
 import type { OrbitControls } from 'three-stdlib'
+import { useAppStore } from '@/lib/store'
 
 interface CameraAnimatorProps {
     selectedScopeId: string | null
@@ -12,6 +13,7 @@ interface CameraAnimatorProps {
 
 export function CameraAnimator({ selectedScopeId }: CameraAnimatorProps) {
     const { camera, controls } = useThree()
+    const setViewMode = useAppStore(state => state.setViewMode)
 
     useEffect(() => {
         if (!controls) return
@@ -24,6 +26,10 @@ export function CameraAnimator({ selectedScopeId }: CameraAnimatorProps) {
             const scope = retrofitScopes.find(s => s.id === selectedScopeId)
             if (!scope?.cameraPosition || !scope?.markerPosition) return
 
+            // Set Dollhouse mode based on scope configuration
+            // If enableDollhouse is not set, default to false (disable dollhouse)
+            setViewMode(scope.enableDollhouse === true ? 'dollhouse' : 'standard')
+
             targetPos = new THREE.Vector3(
                 scope.cameraPosition.x,
                 scope.cameraPosition.y,
@@ -35,6 +41,9 @@ export function CameraAnimator({ selectedScopeId }: CameraAnimatorProps) {
                 scope.markerPosition.z
             )
         } else {
+            // Reset to standard mode when no scope is selected
+            setViewMode('standard')
+
             // Zoom to fit all markers
             const markersWithPositions = retrofitScopes.filter(s => s.markerPosition)
             if (markersWithPositions.length === 0) return
@@ -92,7 +101,7 @@ export function CameraAnimator({ selectedScopeId }: CameraAnimatorProps) {
         }
 
         animate()
-    }, [selectedScopeId, camera, controls])
+    }, [selectedScopeId, camera, controls, setViewMode])
 
     return null
 }

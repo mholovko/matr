@@ -51,7 +51,7 @@ export function LayoutScene() {
             className="absolute inset-x-0 top-0 z-0 transition-all duration-300 ease-in-out"
             style={{ bottom: bottomOffset }}
         >
-            {enableFiltering && <ViewModeToggle />}
+            {(pathname === '/' || pathname === '/inventory' || pathname === '/retrofit') && <ViewModeToggle />}
             <Scene modelType={modelType} enableFiltering={enableFiltering} enableSelection={enableSelection} />
         </div>
     )
