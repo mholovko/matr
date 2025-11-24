@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation'
 import { CameraDebugHelper } from './camera-debug-helper'
 import { CameraAnimator } from './camera-animator'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { PhotomatchCamera } from './photomatch-camera'
 
 const SpeckleModel = dynamic(() => import('./speckle-model').then(mod => mod.SpeckleModel), {
     ssr: false
@@ -197,6 +198,9 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
 
                     {/* Camera debug helper - only on retrofit page */}
                     {pathname === '/retrofit' && <CameraDebugHelper />}
+
+                    {/* Photomatch Camera - only on photomatch page */}
+                    {pathname === '/photomatch' && <PhotomatchCamera />}
 
 
                     {/* Optimization: Disable ContactShadows during interaction or in technical mode */}

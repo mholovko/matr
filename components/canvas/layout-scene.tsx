@@ -21,7 +21,7 @@ export function LayoutScene() {
         return () => window.removeEventListener('resize', checkMobile)
     }, [])
 
-    const modelType = pathname === '/performance' ? 'rooms' : 'elements'
+    const modelType = pathname === '/performance' || pathname === '/photomatch' ? 'rooms' : 'elements'
     const enableFiltering = pathname === '/' || pathname === '/inventory'
     const enableSelection = pathname === '/' || pathname === '/inventory' || pathname === '/performance'
 
