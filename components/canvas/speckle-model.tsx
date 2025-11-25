@@ -10,6 +10,8 @@ import { SpeckleObject } from '@/lib/speckle/types'
 import { useThree, ThreeEvent, useFrame } from '@react-three/fiber'
 import type { OrbitControls } from 'three-stdlib'
 import { DOLLHOUSE_CONFIG, getSectorFromCamera, DollhouseSide } from '@/lib/dollhouse-config'
+import { buildPhaseDataTree } from '@/lib/filters/phase-map'
+import { phasesOrder } from '@/lib/data/phases'
 
 interface SpeckleModelProps {
     projectId: string
@@ -23,7 +25,7 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode } = useAppStore(
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             setLoading: state.setLoading,
@@ -32,6 +34,9 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             filters: state.filters,
             selectedAssemblyId: state.selectedAssemblyId,
             renderMode: state.renderMode,
+            setPhaseDataTree: state.setPhaseDataTree,
+            phases: state.phases,
+            isInteracting: state.isInteracting,
         }))
     )
     const { controls } = useThree()
@@ -89,6 +94,9 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 // Store all elements in the app state ONLY if visible
                 if (visible) {
                     setModelElements(allElements)
+                    // Build phase data tree for phase filtering
+                    const phaseTree = buildPhaseDataTree(allElements, phasesOrder)
+                    setPhaseDataTree(phaseTree)
                 }
 
                 // Handle Units (Simple heuristic for now)
@@ -180,8 +188,18 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
     })
 
     // Apply filters to show/hide elements AND handle backface rendering
+    // Memoize phase filtered IDs to avoid redundant calculations
+    const phaseFilteredIds = useMemo(() => {
+        return phases.dataTree && phases.selectedPhase
+            ? useAppStore.getState().getFilteredElementIds()
+            : null
+    }, [phases.dataTree, phases.selectedPhase, phases.filterMode])
+
     useEffect(() => {
         if (!sceneGroup) return
+
+        // Skip expensive filtering during camera navigation for better performance
+        if (isInteracting) return
 
         // Apply backface rendering if enabled
         if (renderBackFaces) {
@@ -196,6 +214,9 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
         const hasFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
         const isDollhouse = viewMode === 'dollhouse' && currentSector.length > 0 && !selectedAssemblyId
+
+        // Use memoized phase filtered IDs
+        const hasPhaseFilter = phaseFilteredIds !== null
 
         let visibleCount = 0
         let hiddenCount = 0
@@ -225,26 +246,29 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                     }
                 }
 
-                // If no filters active OR filtering is disabled, show everything (unless hidden by dollhouse)
-                if ((!hasFilters || !enableFiltering) && !isHiddenByDollhouse) {
-                    child.visible = true
-                    // Enable raycasting for all meshes in this group
-                    child.traverse((c) => {
-                        if (c instanceof THREE.Mesh) {
-                            c.raycast = THREE.Mesh.prototype.raycast
-                        }
-                    })
-                    visibleCount++
-                    return
-                }
-
-                // Check if element matches filters
+                // Check if element matches category/level/group filters
                 let matchesCategory = filters.categories.length === 0 || filters.categories.includes(category)
                 let matchesLevel = filters.levels.length === 0 || filters.levels.includes(level)
                 let matchesGroup = filters.groups.length === 0 || filters.groups.includes(groupName)
 
-                // Element is visible if it matches all active filter types AND is not hidden by dollhouse
-                child.visible = matchesCategory && matchesLevel && matchesGroup && !isHiddenByDollhouse
+                // Check if element matches phase filter (always enforced if phase is selected)
+                let matchesPhase = !hasPhaseFilter || (phaseFilteredIds?.has(element.id) ?? true)
+
+                // Determine visibility
+                let isVisible = false
+
+                if (!enableFiltering) {
+                    // Filtering disabled: show everything (except dollhouse)
+                    isVisible = true
+                } else if (hasFilters) {
+                    // Category/level/group filters active: combine with phase filter (AND logic)
+                    isVisible = matchesCategory && matchesLevel && matchesGroup && matchesPhase
+                } else {
+                    // No category/level/group filters: just apply phase filter
+                    isVisible = matchesPhase
+                }
+
+                child.visible = isVisible && !isHiddenByDollhouse
 
                 // Disable/enable raycasting based on visibility
                 child.traverse((c) => {
@@ -267,7 +291,9 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         })
 
         console.log(`Filtering complete: ${visibleCount} visible, ${hiddenCount} hidden`)
-    }, [sceneGroup, filters, renderBackFaces, enableFiltering, viewMode, currentSector, selectedAssemblyId])
+    }, [sceneGroup, filters, renderBackFaces, enableFiltering, viewMode, currentSector, selectedAssemblyId, phaseFilteredIds, isInteracting])
+
+    console.log("SpeckleModel Render. ViewMode:", viewMode, "Sector:", currentSector, "Phases:", phases)
 
     // Removed automatic camera fitting - rely on OrbitControls default behavior
     // The initial camera position from Canvas props is sufficient
@@ -366,6 +392,36 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 // Only highlight if selection is enabled AND it matches the selected ID
                 const isSelected = enableSelection && child.userData.parentId === selectedElementId
 
+                // Determine phase color coding based on filter mode
+                let phaseColor: string | null = null
+                if (phases.colorCodingEnabled && phases.dataTree && phases.selectedPhase && child.userData.parentId) {
+                    const phaseData = phases.dataTree.elementsByPhase[phases.selectedPhase]
+                    if (phaseData) {
+                        const elementId = child.userData.parentId
+
+                        // Color code based on filter mode
+                        if (phases.filterMode === 'new') {
+                            // New mode: only color new elements
+                            if (phaseData.created.has(elementId)) {
+                                phaseColor = '#22c55e' // Green for new elements
+                            }
+                        } else if (phases.filterMode === 'demolished') {
+                            // Demolished mode: only color demolished elements
+                            if (phaseData.demolished.has(elementId)) {
+                                phaseColor = '#ef4444' // Red for demolished elements
+                            }
+                        } else if (phases.filterMode === 'diff') {
+                            // Diff mode: color both new and demolished
+                            if (phaseData.created.has(elementId)) {
+                                phaseColor = '#22c55e' // Green for new elements
+                            } else if (phaseData.demolished.has(elementId)) {
+                                phaseColor = '#ef4444' // Red for demolished elements
+                            }
+                        }
+                        // Complete mode: no color coding
+                    }
+                }
+
                 // Handle Material Swapping for Technical Mode
                 if (renderMode === 'technical') {
                     // 1. Save original material if not saved
@@ -374,25 +430,41 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                     }
 
                     // 2. Assign White Basic Material (Unlit)
-                    // We create a new one or reuse a cached one if we could, but new is safer for now to avoid side effects.
-                    // Actually, we can reuse one global one if we want, but let's just create one per mesh for simplicity or use a static one.
-                    // To avoid memory leaks, we should ideally reuse. But let's just new it up for now, Three.js handles it okay.
-                    // Better: Check if current material is already the basic white one.
                     if (!(child.material instanceof THREE.MeshBasicMaterial)) {
                         child.material = new THREE.MeshBasicMaterial({
                             color: 0xffffff,
-                            side: THREE.DoubleSide, // Ensure no backface culling issues for "paper" look
-                            toneMapped: false // Disable tone mapping to ensure pure white
+                            side: THREE.DoubleSide,
+                            toneMapped: false
                         })
                     }
 
-                    // Ensure it's white (or selected color) and tone mapping is off
+                    const basicMat = child.material as THREE.MeshBasicMaterial
+
+                    // Set color and opacity
                     if (isSelected) {
-                        (child.material as THREE.MeshBasicMaterial).color.set('#3b82f6');
+                        basicMat.color.set('#3b82f6');
+                        basicMat.transparent = false;
+                        basicMat.opacity = 1.0;
+                        basicMat.depthWrite = true;
+                    } else if (phaseColor) {
+                        basicMat.color.set(phaseColor);
+                        basicMat.transparent = false;
+                        basicMat.opacity = 1.0;
+                        basicMat.depthWrite = true;
                     } else {
-                        (child.material as THREE.MeshBasicMaterial).color.set(0xffffff);
+                        basicMat.color.set(0xffffff);
+                        // Make transparent if color coding is active
+                        if (phases.colorCodingEnabled && phases.filterMode !== 'complete') {
+                            basicMat.transparent = true;
+                            basicMat.opacity = 0.1;
+                            basicMat.depthWrite = false;
+                        } else {
+                            basicMat.transparent = false;
+                            basicMat.opacity = 1.0;
+                            basicMat.depthWrite = true;
+                        }
                     }
-                    (child.material as THREE.MeshBasicMaterial).toneMapped = false;
+                    basicMat.toneMapped = false;
 
                     // Handle Edges
                     const edgeName = '__technical_edge'
@@ -418,6 +490,15 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
                     if (isSelected) {
                         material.color.set('#3b82f6')
+                        material.transparent = false
+                        material.opacity = 1.0
+                        material.depthWrite = true
+                    } else if (phaseColor) {
+                        // Apply phase color coding
+                        material.color.set(phaseColor)
+                        material.transparent = false
+                        material.opacity = 1.0
+                        material.depthWrite = true
                     } else {
                         if (renderMode === 'rendered') {
                             material.color.set('#f0f0f0')
@@ -432,6 +513,16 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                             material.roughness = 1.0
                             material.metalness = 0.0
                         }
+                        // Make transparent if color coding is active
+                        if (phases.colorCodingEnabled && phases.filterMode !== 'complete') {
+                            material.transparent = true
+                            material.opacity = 0.1
+                            material.depthWrite = false
+                        } else {
+                            material.transparent = false
+                            material.opacity = 1.0
+                            material.depthWrite = true
+                        }
                     }
                     material.needsUpdate = true
 
@@ -444,7 +535,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 }
             }
         })
-    }, [selectedElementId, sceneGroup, enableSelection, renderMode])
+    }, [selectedElementId, sceneGroup, enableSelection, renderMode, phases])
 
     if (!sceneGroup) return null
 

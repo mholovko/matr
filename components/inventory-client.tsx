@@ -4,6 +4,7 @@ import { LogPanel } from "@/components/dashboard/log/log-panel"
 import { MobileDrawer } from "@/components/dashboard/mobile-drawer"
 import { LogContent } from "@/components/dashboard/log/log-content"
 import { FilterControls } from "@/components/dashboard/filter-controls"
+import { PhasesPanel } from "@/components/dashboard/phases/phases-panel"
 import { useAppStore } from "@/lib/store"
 
 export function InventoryClient() {
@@ -11,6 +12,7 @@ export function InventoryClient() {
 
     return (
         <>
+            <PhasesPanel />
             <LogPanel />
             <MobileDrawer>
                 {selectedElementId ? (

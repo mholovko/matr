@@ -2,12 +2,20 @@ import { create } from 'zustand'
 import { SpeckleObject } from '@/lib/speckle/types'
 import { FeedEvent } from '@/lib/data/feed'
 import { RoomPerformanceData } from '@/lib/data/performance'
+import { PhaseDataTree } from '@/lib/data/phase-map'
 
 interface FilterState {
     categories: string[]
     levels: string[]
     materials: string[]
     groups: string[]
+}
+
+interface PhaseState {
+    dataTree: PhaseDataTree | null
+    selectedPhase: string | null
+    filterMode: 'complete' | 'new' | 'demolished' | 'diff'
+    colorCodingEnabled: boolean
 }
 
 interface ModelData {
@@ -83,6 +91,14 @@ interface AppState {
     // Mobile Drawer
     mobileDrawerSnap: number | string | null
     setMobileDrawerSnap: (snap: number | string | null) => void
+
+    // Phases
+    phases: PhaseState
+    setPhaseDataTree: (tree: PhaseDataTree | null) => void
+    setSelectedPhase: (phase: string | null) => void
+    setPhaseFilterMode: (mode: 'complete' | 'new' | 'demolished' | 'diff') => void
+    setPhaseColorCoding: (enabled: boolean) => void
+    getFilteredElementIds: () => Set<string>
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -141,6 +157,69 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     mobileDrawerSnap: 0.5,
     setMobileDrawerSnap: (snap) => set({ mobileDrawerSnap: snap }),
+
+    // Phases
+    phases: {
+        dataTree: null,
+        selectedPhase: null,
+        filterMode: 'diff',
+        colorCodingEnabled: true
+    },
+
+    setPhaseDataTree: (tree) => set((state) => ({
+        phases: {
+            ...state.phases,
+            dataTree: tree,
+            selectedPhase: tree && tree.phasesByOrder.length > 0 ? tree.phasesByOrder[tree.phasesByOrder.length - 1] : null
+        }
+    })),
+
+    setSelectedPhase: (phase) => set((state) => ({
+        phases: {
+            ...state.phases,
+            selectedPhase: phase
+        }
+    })),
+
+    setPhaseFilterMode: (mode) => set((state) => ({
+        phases: {
+            ...state.phases,
+            filterMode: mode
+        }
+    })),
+
+    setPhaseColorCoding: (enabled) => set((state) => ({
+        phases: {
+            ...state.phases,
+            colorCodingEnabled: enabled
+        }
+    })),
+
+    getFilteredElementIds: () => {
+        const state = get()
+        const { dataTree, selectedPhase, filterMode } = state.phases
+
+        if (!dataTree || !selectedPhase) return new Set()
+
+        const phaseData = dataTree.elementsByPhase[selectedPhase]
+        if (!phaseData) return new Set()
+
+        if (filterMode === 'complete') {
+            return phaseData.active
+        } else if (filterMode === 'new') {
+            return phaseData.created
+        } else if (filterMode === 'demolished') {
+            return phaseData.demolished
+        } else if (filterMode === 'diff') {
+            // Return active elements + demolished elements (complete view with demolished visible)
+            const diff = new Set<string>()
+            phaseData.active.forEach(id => diff.add(id))
+            phaseData.demolished.forEach(id => diff.add(id))
+            return diff
+        }
+
+        return new Set()
+    },
 
     setSelectedElement: (id, data) => set({
         selectedElementId: id,

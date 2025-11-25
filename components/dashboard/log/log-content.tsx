@@ -12,7 +12,8 @@ export function LogContent() {
         setSelectedElement,
         logActiveTab,
         setLogActiveTab,
-        selectedAssemblyId
+        selectedAssemblyId,
+        phases
     } = useAppStore(
         useShallow((state) => ({
             selectedElementId: state.selectedElementId,
@@ -20,7 +21,8 @@ export function LogContent() {
             setSelectedElement: state.setSelectedElement,
             logActiveTab: state.logActiveTab,
             setLogActiveTab: state.setLogActiveTab,
-            selectedAssemblyId: state.selectedAssemblyId
+            selectedAssemblyId: state.selectedAssemblyId,
+            phases: state.phases
         }))
     )
     // Extract element info from selectedElementData
@@ -44,10 +46,6 @@ export function LogContent() {
         selectedElementData?.properties?.Parameters?.["Instance Parameters"]?.Other?.Family?.value ||
         ""
 
-
-    // Extract element phasing
-    const elementCreatedPhase = selectedElementData?.properties?.Parameters?.["Instance Parameters"]?.Phasing?.["Phase Created"]?.value || ""
-    const elementDemolishedPhase = selectedElementData?.properties?.Parameters?.["Instance Parameters"]?.Phasing?.["Phase Demolished"]?.value || ""
 
     // Extract dimensions
     const volume = selectedElementData?.properties?.Parameters?.["Instance Parameters"]?.Dimensions?.Volume?.value
@@ -106,6 +104,7 @@ export function LogContent() {
                     </div>
                 </div>
             </div>
+
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {/* Tabs */}
@@ -208,25 +207,27 @@ export function LogContent() {
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Phasing</span>
                                 </div>
                                 <div className="p-4 space-y-4">
-                                    {(elementCreatedPhase || elementDemolishedPhase) && (
-                                        <div>
-                                            <div className="space-y-1 text-xs font-mono">
-                                                {elementCreatedPhase && (
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Created Phase:</span>
-                                                        <span className="text-foreground font-bold">{elementCreatedPhase}</span>
-                                                    </div>
-                                                )}
-                                                {elementDemolishedPhase && (
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Demolished Phase:</span>
-                                                        <span className="text-foreground font-bold">{elementDemolishedPhase}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {!elementCreatedPhase && !elementDemolishedPhase && (
+                                    {phases.dataTree && selectedElementData?.id && phases.dataTree.elementPhaseInfo[selectedElementData.id] ? (
+                                        (() => {
+                                            const elementPhaseInfo = phases.dataTree!.elementPhaseInfo[selectedElementData.id!]
+                                            return (
+                                                <div className="space-y-3">
+                                                    {elementPhaseInfo.createdPhase && (
+                                                        <div>
+                                                            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Created Phase</div>
+                                                            <div className="text-xs font-mono text-foreground">{elementPhaseInfo.createdPhase}</div>
+                                                        </div>
+                                                    )}
+                                                    {elementPhaseInfo.demolishedPhase && (
+                                                        <div>
+                                                            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Demolished Phase</div>
+                                                            <div className="text-xs font-mono text-foreground">{elementPhaseInfo.demolishedPhase}</div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })()
+                                    ) : (
                                         <div className="text-xs text-muted-foreground font-mono">
                                             No phasing data available.
                                         </div>
