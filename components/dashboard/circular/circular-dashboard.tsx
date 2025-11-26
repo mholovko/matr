@@ -16,7 +16,8 @@ export function CircularDashboard() {
         selectedMaterialName,
         selectedAssemblyId,
         phases,
-        searchTerm
+        searchTerm,
+        setHoveredElementIds
     } = useAppStore(
         useShallow((state) => ({
             modelElements: state.modelElements,
@@ -27,7 +28,8 @@ export function CircularDashboard() {
             selectedMaterialName: state.selectedMaterialName,
             selectedAssemblyId: state.selectedAssemblyId,
             phases: state.phases,
-            searchTerm: state.searchTerm
+            searchTerm: state.searchTerm,
+            setHoveredElementIds: state.setHoveredElementIds
         }))
     )
 
@@ -145,7 +147,22 @@ export function CircularDashboard() {
                         {componentInventory.map((mat, i) => (
                             <div
                                 key={i}
-                                className="flex items-center justify-between text-xs p-2 bg-muted/5 rounded border border-border/50"
+                                className="flex items-center justify-between text-xs p-2 bg-muted/5 rounded border border-border/50 hover:bg-muted/20 transition-colors cursor-pointer"
+                                onMouseEnter={() => {
+                                    // Find all elements with this material
+                                    const ids = workingSet
+                                        .filter(el => {
+                                            const materialQuantities = el.properties?.["Material Quantities"] || {}
+                                            return Object.keys(materialQuantities).some(name => name === mat.name)
+                                        })
+                                        .map(el => el.id)
+                                        .filter((id): id is string => !!id)
+
+                                    if (ids.length > 0) {
+                                        setHoveredElementIds(ids)
+                                    }
+                                }}
+                                onMouseLeave={() => setHoveredElementIds(null)}
                             >
                                 <div>
                                     <div className="font-bold text-foreground">{mat.name}</div>

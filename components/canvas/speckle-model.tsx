@@ -25,7 +25,7 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true, isPrimaryModel = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting, selectionMode, selectedMaterialName, searchTerm } = useAppStore(
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting, selectionMode, selectedMaterialName, searchTerm, hoveredElementIds } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             setLoading: state.setLoading,
@@ -39,7 +39,8 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             isInteracting: state.isInteracting,
             selectionMode: state.selectionMode,
             selectedMaterialName: state.selectedMaterialName,
-            searchTerm: state.searchTerm
+            searchTerm: state.searchTerm,
+            hoveredElementIds: state.hoveredElementIds
         }))
     )
     const { controls, camera } = useThree()
@@ -268,6 +269,18 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             batcher.clearHighlight()
         }
     }, [selectedElementId, sceneGroup])
+
+    // Hover Highlighting
+    useEffect(() => {
+        const batcher = sceneGroup?.userData.batcher
+        if (!batcher) return
+
+        if (hoveredElementIds && hoveredElementIds.length > 0) {
+            batcher.hover(hoveredElementIds)
+        } else {
+            batcher.clearHover()
+        }
+    }, [hoveredElementIds, sceneGroup])
 
     // Apply filters to show/hide elements AND handle backface rendering
     // Memoize phase filtered IDs to avoid redundant calculations

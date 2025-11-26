@@ -7,12 +7,14 @@ export class Batcher {
     public batches: { [id: string]: MeshBatch } = {}
     private maxVertices = 500000 // Limit per batch
     private highlightMaterial: THREE.MeshStandardMaterial | null = null
+    private hoverMaterial: THREE.MeshStandardMaterial | null = null
     private defaultMaterial: THREE.MeshStandardMaterial | null = null
     private renderBackFaces: boolean = false
 
     // State Management
     private filteredOutElements: Set<string> = new Set()
     private highlightedElements: Set<string> = new Set()
+    private hoveredElements: Set<string> = new Set()
     private phaseStatus: Map<string, 'created' | 'demolished' | 'existing'> = new Map()
     private phaseMaterials: {
         created: THREE.MeshStandardMaterial,
@@ -265,13 +267,25 @@ export class Batcher {
      * Get all required materials
      */
     private getMaterials() {
+        // 1. Highlight Material (Selection) - Strong Blue with Glow
         if (!this.highlightMaterial) {
             this.highlightMaterial = new THREE.MeshStandardMaterial({
-                color: 0x3b82f6, // Blue
-                emissive: 0x1e40af,
-                emissiveIntensity: 0.3,
+                color: 0x2563eb,        // Blue-600
+                emissive: 0x1e3a8a,     // Dark Blue Glow
+                emissiveIntensity: 0.4, // Moderate glow
+                metalness: 0.2,
+                roughness: 0.5
+            })
+        }
+
+        // 2. Hover Material - Light Sky Blue, No Glow (Distinct from Selection)
+        if (!this.hoverMaterial) {
+            this.hoverMaterial = new THREE.MeshStandardMaterial({
+                color: 0x60a5fa,        // Blue-400
+                emissive: 0x000000,     // No Emissive (Flat look)
+                emissiveIntensity: 0.0,
                 metalness: 0.1,
-                roughness: 0.8
+                roughness: 0.2          // Slightly shiny
             })
         }
 
@@ -333,11 +347,12 @@ export class Batcher {
         const hiddenMaterial = new THREE.MeshStandardMaterial({ visible: false })
 
         return {
-            default: this.defaultMaterial,
-            highlight: this.highlightMaterial,
-            created: this.phaseMaterials.created,
-            demolished: this.phaseMaterials.demolished,
-            existing: this.phaseMaterials.existing,
+            default: this.defaultMaterial!,
+            highlight: this.highlightMaterial!,
+            hover: this.hoverMaterial!,
+            created: this.phaseMaterials!.created,
+            demolished: this.phaseMaterials!.demolished,
+            existing: this.phaseMaterials!.existing,
             hidden: hiddenMaterial,
             room: roomMaterial,
             roomHighlight: roomHighlightMaterial
@@ -364,13 +379,15 @@ export class Batcher {
             // 3: Demolished
             // 4: Existing
             // 5: Hidden
+            // 6: Hover
             const materialArray = [
                 batchBaseMaterial,
                 highlightMat,
                 materials.created,
                 materials.demolished,
                 materials.existing,
-                materials.hidden
+                materials.hidden,
+                materials.hover
             ]
 
             const groups: { start: number; count: number; materialIndex: number }[] = []
@@ -389,7 +406,11 @@ export class Batcher {
                     if (this.highlightedElements.has(obj.elementId)) {
                         materialIndex = 1
                     }
-                    // Priority 3: Phase Status
+                    // Priority 3: Hovered
+                    else if (this.hoveredElements.has(obj.elementId)) {
+                        materialIndex = 6 // Hover material index
+                    }
+                    // Priority 4: Phase Status
                     else if (this.phaseStatus.has(obj.elementId) && !this.renderBackFaces) {
                         const status = this.phaseStatus.get(obj.elementId)
                         if (status === 'created') materialIndex = 2
@@ -453,6 +474,17 @@ export class Batcher {
 
     public clearHighlight() {
         this.highlightedElements.clear()
+        this.updateVisualState()
+    }
+
+    public hover(elementIds: string[]) {
+        this.hoveredElements.clear()
+        elementIds.forEach(id => this.hoveredElements.add(id))
+        this.updateVisualState()
+    }
+
+    public clearHover() {
+        this.hoveredElements.clear()
         this.updateVisualState()
     }
 

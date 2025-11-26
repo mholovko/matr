@@ -32,6 +32,10 @@ interface AppState {
     selectedElementData: SpeckleObject | null
     setSelectedElement: (id: string | null, data?: SpeckleObject) => void
 
+    // Hover State
+    hoveredElementIds: string[] | null
+    setHoveredElementIds: (ids: string[] | null) => void
+
     // Assembly Selection
     selectedAssemblyId: string | null
     setSelectedAssembly: (id: string | null) => void
@@ -116,6 +120,9 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
     selectedElementId: null,
     selectedElementData: null,
+
+    hoveredElementIds: null,
+    setHoveredElementIds: (ids) => set({ hoveredElementIds: ids }),
 
     selectedAssemblyId: null,
     setSelectedAssembly: (id) => set({ selectedAssemblyId: id, isLogOpen: !!id }),

@@ -5,16 +5,20 @@ import { useState, useMemo, memo } from 'react'
 import { cn } from '@/lib/utils'
 import { Search } from 'lucide-react'
 
-const ElementListItem = memo(({ element, status, onClick, style }: {
+const ElementListItem = memo(({ element, status, onClick, onMouseEnter, onMouseLeave, style }: {
   element: any
   status: 'created' | 'demolished' | 'existing'
   onClick: () => void
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
   style: React.CSSProperties
 }) => {
   return (
     <div style={style} className="w-full px-2">
       <button
         onClick={onClick}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         className={cn(
           'w-full h-full text-left flex items-center gap-2 px-2 rounded-md transition-colors group select-none',
           status === 'created' && 'hover:bg-green-50/50',
@@ -51,7 +55,7 @@ const ElementListItem = memo(({ element, status, onClick, style }: {
 ElementListItem.displayName = 'ElementListItem'
 
 export function PhaseElementList() {
-  const { phases, modelElements, setSelectedElement, searchTerm, setSearchTerm } = useAppStore()
+  const { phases, modelElements, setSelectedElement, searchTerm, setSearchTerm, setHoveredElementIds } = useAppStore()
 
   // 1. Filtering Logic
   const filteredElementIds = useMemo(() => {
@@ -147,6 +151,8 @@ export function PhaseElementList() {
                   transform: `translateY(${actualIndex * ITEM_HEIGHT}px)`,
                   height: ITEM_HEIGHT
                 }}
+                onMouseEnter={() => element?.id && setHoveredElementIds([element.id])}
+                onMouseLeave={() => setHoveredElementIds(null)}
               />
             )
           })}
