@@ -22,6 +22,7 @@ export class Batcher {
 
     // Material Lookup
     private materialLookup: Map<string, string> = new Map()
+    private materialDefinitions: Map<string, any> = new Map()
 
     constructor() { }
 
@@ -31,138 +32,167 @@ export class Batcher {
         // Initialize materials with backface setting
         this.renderBackFaces = renderBackFaces
 
-        const batches: MeshBatch[] = []
-        let currentVertices = 0
-        let currentGeometries: THREE.BufferGeometry[] = []
-        let currentBatchObjects: BatchObject[] = []
-
-        // Initial material for batch creation (will be replaced by updateVisualState)
-        let currentMaterial = new THREE.MeshStandardMaterial({
-            color: 0xe2e8f0,
-            side: renderBackFaces ? THREE.BackSide : THREE.DoubleSide
-        })
-
-        // Helper to flush current batch
-        const flush = () => {
-            if (currentGeometries.length === 0) return
-
-            try {
-                console.log(`Batcher: Flushing batch with ${currentGeometries.length} geometries`)
-
-                const mergedGeometry = new THREE.BufferGeometry()
-
-                // Calculate total size
-                let totalPos = 0
-                let totalIndex = 0
-
-                currentGeometries.forEach(g => {
-                    totalPos += g.attributes.position.count
-                    totalIndex += g.index ? g.index.count : 0
-                })
-
-                const positions = new Float32Array(totalPos * 3)
-                const indices = new Uint32Array(totalIndex)
-
-                let posOffset = 0
-                let indexOffset = 0
-
-                let currentFaceIndex = 0
-
-                currentGeometries.forEach((g, i) => {
-                    const batchObj = currentBatchObjects[i]
-
-                    // Apply transform to positions
-                    const pos = g.attributes.position.array as Float32Array
-                    const count = g.attributes.position.count
-                    const transform = batchObj.renderView.transform || new THREE.Matrix4()
-
-                    const v = new THREE.Vector3()
-                    for (let k = 0; k < count; k++) {
-                        v.set(pos[k * 3], pos[k * 3 + 1], pos[k * 3 + 2])
-                        v.applyMatrix4(transform)
-                        positions[posOffset + k * 3] = v.x
-                        positions[posOffset + k * 3 + 1] = v.y
-                        positions[posOffset + k * 3 + 2] = v.z
-                    }
-
-                    // Track face range for raycasting
-                    const startFace = currentFaceIndex
-
-                    // Copy indices with offset
-                    if (g.index) {
-                        const idx = g.index.array
-                        const idxCount = g.index.count
-                        for (let k = 0; k < idxCount; k++) {
-                            indices[indexOffset + k] = idx[k] + (posOffset / 3)
-                        }
-                        indexOffset += idxCount
-                        currentFaceIndex += idxCount / 3 // Each face has 3 indices
-                    }
-
-                    const endFace = currentFaceIndex
-
-                    // Update BatchObject metadata with face range
-                    batchObj.batchIndex = indexOffset
-                    batchObj.startFaceIndex = startFace
-                    batchObj.endFaceIndex = endFace
-
-                    posOffset += count * 3
-                })
-
-                mergedGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-                mergedGeometry.setIndex(new THREE.BufferAttribute(indices, 1))
-                mergedGeometry.computeVertexNormals()
-
-                const batchId = Math.random().toString(36).substring(7)
-                const batch = new MeshBatch(batchId, mergedGeometry, [currentMaterial], currentBatchObjects)
-
-                this.batches[batchId] = batch
-                console.log(`Batcher: Created batch ${batchId} with ${currentBatchObjects.length} objects`)
-
-                // Reset
-                currentVertices = 0
-                currentGeometries = []
-                currentBatchObjects = []
-            } catch (error) {
-                console.error('Batcher: Error during flush:', error)
-                throw error
-            }
-        }
+        // First pass: Assign material names to all RenderViews
+        const renderViewsWithMaterials: Array<RenderView & { assignedMaterial: string }> = []
 
         renderViews.forEach(rv => {
-            const geometry = rv.geometry
-            if (!geometry) {
+            if (!rv.geometry) {
                 console.warn('Batcher: Skipping render view with no geometry', rv)
                 return
             }
 
-            const vertCount = geometry.attributes.position.count
-
-            if (currentVertices + vertCount > this.maxVertices) {
-                flush()
+            // Lookup material name for this mesh
+            let materialName = 'default'
+            if (rv.meshId && this.materialLookup.has(rv.meshId)) {
+                materialName = this.materialLookup.get(rv.meshId)!
             }
 
-            currentVertices += vertCount
-            currentGeometries.push(geometry)
-
-            const batchObj = new BatchObject(rv, 0)
-
-            // Lookup and store material name for this mesh
-            if (rv.meshId) {
-                if (this.materialLookup.has(rv.meshId)) {
-                    batchObj.materialName = this.materialLookup.get(rv.meshId)!
-                    console.log(`✓ Mesh ${rv.meshId} → Material: ${batchObj.materialName}`)
-                } else {
-                    console.warn(`✗ Mesh ${rv.meshId} not found in material lookup`)
-                }
-            } else {
-                console.warn('✗ RenderView has no meshId')
-            }
-
-            currentBatchObjects.push(batchObj)
+            renderViewsWithMaterials.push({
+                ...rv,
+                assignedMaterial: materialName
+            })
         })
 
-        flush() // Final flush
+        // Group RenderViews by material
+        const materialGroups = new Map<string, typeof renderViewsWithMaterials>()
+        renderViewsWithMaterials.forEach(rv => {
+            const materialName = rv.assignedMaterial
+            if (!materialGroups.has(materialName)) {
+                materialGroups.set(materialName, [])
+            }
+            materialGroups.get(materialName)!.push(rv)
+        })
+
+        console.log(`Batcher: Grouped into ${materialGroups.size} material groups`)
+
+        // Create one batch per material group
+        materialGroups.forEach((renderViews, materialName) => {
+            console.log(`Batcher: Creating batch for material "${materialName}" with ${renderViews.length} meshes`)
+
+            // Split large material groups into sub-batches if needed (vertex limit)
+            let currentVertices = 0
+            let currentGeometries: THREE.BufferGeometry[] = []
+            let currentBatchObjects: BatchObject[] = []
+
+            const flush = () => {
+                if (currentGeometries.length === 0) return
+
+                try {
+                    const mergedGeometry = new THREE.BufferGeometry()
+
+                    // Calculate total size
+                    let totalPos = 0
+                    let totalIndex = 0
+
+                    currentGeometries.forEach(g => {
+                        totalPos += g.attributes.position.count
+                        totalIndex += g.index ? g.index.count : 0
+                    })
+
+                    const positions = new Float32Array(totalPos * 3)
+                    const indices = new Uint32Array(totalIndex)
+
+                    let posOffset = 0
+                    let indexOffset = 0
+                    let currentFaceIndex = 0
+
+                    currentGeometries.forEach((g, i) => {
+                        const batchObj = currentBatchObjects[i]
+
+                        // Apply transform to positions
+                        const pos = g.attributes.position.array as Float32Array
+                        const count = g.attributes.position.count
+                        const transform = batchObj.renderView.transform || new THREE.Matrix4()
+
+                        const v = new THREE.Vector3()
+                        for (let k = 0; k < count; k++) {
+                            v.set(pos[k * 3], pos[k * 3 + 1], pos[k * 3 + 2])
+                            v.applyMatrix4(transform)
+                            positions[posOffset + k * 3] = v.x
+                            positions[posOffset + k * 3 + 1] = v.y
+                            positions[posOffset + k * 3 + 2] = v.z
+                        }
+
+                        // Track face range for raycasting
+                        const startFace = currentFaceIndex
+
+                        // Copy indices with offset
+                        if (g.index) {
+                            const idx = g.index.array
+                            const idxCount = g.index.count
+                            for (let k = 0; k < idxCount; k++) {
+                                indices[indexOffset + k] = idx[k] + (posOffset / 3)
+                            }
+                            indexOffset += idxCount
+                            currentFaceIndex += idxCount / 3
+                        }
+
+                        const endFace = currentFaceIndex
+
+                        // Update BatchObject metadata with face range
+                        batchObj.batchIndex = indexOffset
+                        batchObj.startFaceIndex = startFace
+                        batchObj.endFaceIndex = endFace
+
+                        posOffset += count * 3
+                    })
+
+                    mergedGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+                    mergedGeometry.setIndex(new THREE.BufferAttribute(indices, 1))
+                    mergedGeometry.computeVertexNormals()
+
+                    // Use material name as batch ID (with suffix for sub-batches)
+                    const batchId = `${materialName}_${Math.random().toString(36).substring(7)}`
+
+                    // Create material from Speckle definition
+                    let currentMaterial: THREE.MeshStandardMaterial
+                    const materialDef = this.materialDefinitions.get(materialName)
+                    if (materialDef) {
+                        currentMaterial = this.createMaterialFromSpeckle(materialName, materialDef, renderBackFaces)
+                        console.log(`Batcher: Created material "${materialName}" with color ${currentMaterial.color.getHexString()}, opacity ${currentMaterial.opacity}`)
+                    } else {
+                        // Fallback to default material
+                        currentMaterial = new THREE.MeshStandardMaterial({
+                            color: 0xe2e8f0,
+                            side: renderBackFaces ? THREE.BackSide : THREE.DoubleSide
+                        })
+                        currentMaterial.name = materialName
+                    }
+
+                    const batch = new MeshBatch(batchId, mergedGeometry, [currentMaterial], currentBatchObjects)
+
+                    this.batches[batchId] = batch
+                    console.log(`Batcher: Created batch ${batchId} with ${currentBatchObjects.length} objects`)
+
+                    // Reset
+                    currentVertices = 0
+                    currentGeometries = []
+                    currentBatchObjects = []
+                } catch (error) {
+                    console.error('Batcher: Error during flush:', error)
+                    throw error
+                }
+            }
+
+            renderViews.forEach(rv => {
+                const vertCount = rv.geometry!.attributes.position.count
+
+                if (currentVertices + vertCount > this.maxVertices) {
+                    flush()
+                }
+
+                currentVertices += vertCount
+                currentGeometries.push(rv.geometry!)
+
+                const batchObj = new BatchObject(rv, 0)
+                batchObj.materialName = rv.assignedMaterial
+
+                currentBatchObjects.push(batchObj)
+            })
+
+            flush() // Flush remaining for this material
+        })
+
         console.log(`Batcher: Finished batching. Created ${Object.keys(this.batches).length} batches`)
 
         // Ensure visual state is updated with correct materials
@@ -178,8 +208,57 @@ export class Batcher {
         console.log(`Batcher: Set material lookup with ${lookup.size} mesh-material mappings`)
     }
 
+    public setMaterialDefinitions(definitions: Map<string, any>) {
+        this.materialDefinitions = definitions
+        console.log(`Batcher: Set ${definitions.size} material definitions`)
+    }
+
     public getMaterialForMesh(meshId: string): string | null {
         return this.materialLookup.get(meshId) || null
+    }
+
+    /**
+     * Create a THREE.js material from Speckle material properties
+     */
+    private createMaterialFromSpeckle(materialName: string, materialProps: any, backfaces: boolean = false): THREE.MeshStandardMaterial {
+        // Default material properties
+        const params: THREE.MeshStandardMaterialParameters = {
+            side: backfaces ? THREE.BackSide : THREE.DoubleSide,
+            metalness: materialProps.metalness ?? 0.0,
+            roughness: materialProps.roughness ?? 1.0,
+        }
+
+        // Convert Speckle color (ARGB integer) to THREE.js color
+        if (materialProps.diffuse !== undefined) {
+            const argb = materialProps.diffuse
+            const r = ((argb >> 16) & 0xFF) / 255
+            const g = ((argb >> 8) & 0xFF) / 255
+            const b = (argb & 0xFF) / 255
+            params.color = new THREE.Color(r, g, b)
+        } else {
+            params.color = 0xe2e8f0 // Default gray
+        }
+
+        // Opacity/Transparency
+        if (materialProps.opacity !== undefined && materialProps.opacity < 1.0) {
+            params.transparent = true
+            params.opacity = materialProps.opacity
+            params.depthWrite = false // Prevent z-fighting with transparent materials
+        }
+
+        // Emissive color
+        if (materialProps.emissive !== undefined) {
+            const argb = materialProps.emissive
+            const r = ((argb >> 16) & 0xFF) / 255
+            const g = ((argb >> 8) & 0xFF) / 255
+            const b = (argb & 0xFF) / 255
+            params.emissive = new THREE.Color(r, g, b)
+        }
+
+        const material = new THREE.MeshStandardMaterial(params)
+        material.name = materialName
+
+        return material
     }
 
     /**
@@ -274,34 +353,30 @@ export class Batcher {
         // Select appropriate highlight material based on mode
         const highlightMat = this.renderBackFaces ? materials.roomHighlight : materials.highlight
 
-        // Material Indices:
-        // 0: Default
-        // 1: Highlight
-        // 2: Created
-        // 3: Demolished
-        // 4: Existing
-        // 5: Hidden
-        // 6: Room (Backfaces)
-        const materialArray = [
-            materials.default,
-            highlightMat,
-            materials.created,
-            materials.demolished,
-            materials.existing,
-            materials.hidden,
-            materials.room
-        ]
-
         Object.values(this.batches).forEach(batch => {
+            // Get the original material for this batch (created from Speckle definition)
+            const batchBaseMaterial = batch.materials[0] || materials.default
+
+            // Material Indices:
+            // 0: Batch Base Material (from Speckle)
+            // 1: Highlight
+            // 2: Created
+            // 3: Demolished
+            // 4: Existing
+            // 5: Hidden
+            const materialArray = [
+                batchBaseMaterial,
+                highlightMat,
+                materials.created,
+                materials.demolished,
+                materials.existing,
+                materials.hidden
+            ]
+
             const groups: { start: number; count: number; materialIndex: number }[] = []
 
             batch.batchObjects.forEach(obj => {
-                let materialIndex = 0 // Default
-
-                // If rendering backfaces (Rooms), use Room material by default
-                if (this.renderBackFaces) {
-                    materialIndex = 6
-                }
+                let materialIndex = 0 // Use batch's base material by default
 
                 // Priority 1: Hidden (Filtered Out)
                 if (this.filteredOutElements.has(obj.elementId)) {
@@ -314,8 +389,7 @@ export class Batcher {
                     if (this.highlightedElements.has(obj.elementId)) {
                         materialIndex = 1
                     }
-                    // Priority 3: Phase Status (Only if not in Room mode, or if we want phase colors on rooms)
-                    // For now, let's assume Rooms don't have phases or we prioritize Room material
+                    // Priority 3: Phase Status
                     else if (this.phaseStatus.has(obj.elementId) && !this.renderBackFaces) {
                         const status = this.phaseStatus.get(obj.elementId)
                         if (status === 'created') materialIndex = 2
@@ -345,7 +419,7 @@ export class Batcher {
                     batch.mesh.geometry.addGroup(g.start, g.count, g.materialIndex)
                 })
             } else {
-                batch.mesh.material = this.renderBackFaces ? materials.room : materials.default
+                batch.mesh.material = batchBaseMaterial
                 batch.mesh.geometry.clearGroups()
             }
         })

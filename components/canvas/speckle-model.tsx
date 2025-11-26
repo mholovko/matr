@@ -56,15 +56,23 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 const renderViews = convertToRenderViews(root)
                 console.log(`Converted ${renderViews.length} render views`)
 
-                // 2.5. Extract material lookup map from renderMaterialProxies
+                // 2.5. Extract material lookup map and definitions from renderMaterialProxies
                 const materialLookup = new Map<string, string>() // meshId → materialName
+                const materialDefinitions = new Map<string, any>() // materialName → material properties
 
                 if (root.renderMaterialProxies && Array.isArray(root.renderMaterialProxies)) {
                     root.renderMaterialProxies.forEach((proxy: any) => {
                         const materialName = proxy.value?.name
+                        const materialProps = proxy.value
                         const objectIds = proxy.objects || []
 
                         if (materialName && Array.isArray(objectIds)) {
+                            // Store material definition
+                            if (!materialDefinitions.has(materialName)) {
+                                materialDefinitions.set(materialName, materialProps)
+                            }
+
+                            // Map each mesh to this material
                             objectIds.forEach((meshId: string) => {
                                 materialLookup.set(meshId, materialName)
                             })
@@ -72,7 +80,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                     })
                 }
 
-                console.log(`Built material lookup map with ${materialLookup.size} mesh-material mappings`)
+                console.log(`Built material lookup with ${materialLookup.size} mesh mappings and ${materialDefinitions.size} material definitions`)
 
                 // 3. Extract metadata for the store (still needed for filtering UI)
                 const allElements: SpeckleObject[] = []
@@ -98,6 +106,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 const { Batcher } = await import('@/lib/viewer/batching/batcher')
                 const batcher = new Batcher()
                 batcher.setMaterialLookup(materialLookup)
+                batcher.setMaterialDefinitions(materialDefinitions)
                 batcher.makeBatches(renderViews, renderBackFaces)
 
                 const batches = batcher.getBatches()
