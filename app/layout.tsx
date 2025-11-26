@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MatR - Building Log",
-  description: "Retrofit Pilot - No. 33 Link Road",
+  title: "MatR - Retrofit Pilot",
+  description: "Material Register - No. 33 Link Road",
 };
 
 export default function RootLayout({
@@ -27,29 +27,47 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <main className="relative h-screen w-screen overflow-hidden flex flex-col">
-          {/* Header */}
-          <header className="absolute top-0 left-0 z-10 w-full p-4 flex justify-between items-center bg-gradient-to-b from-white/80 to-transparent pointer-events-none">
-            <h1 className="text-2xl font-bold text-slate-900 pointer-events-auto">
-              Retrofit Pilot <span className="text-slate-500 text-sm font-normal">No. 33 Link Road</span>
-            </h1>
-          </header>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <main className="relative h-screen w-screen overflow-hidden bg-background">
 
-          {/* Navigation Toggle */}
-          <PageToggle />
-
-          {/* Main Content Area */}
-          <div className="flex-1 flex relative z-0 overflow-hidden">
+          {/* 1. Full Screen 3D Canvas */}
+          <div className="absolute inset-0 z-0">
             <LayoutScene />
-            <div className="relative z-10 w-full h-full pointer-events-none [&>*]:pointer-events-auto">
-              <ErrorBoundary>
-                {children}
-              </ErrorBoundary>
-            </div>
           </div>
+
+          {/* 2. Floating Header Elements */}
+
+          {/* Logo - Top Left - Clean/Minimalist (No Panel) */}
+          <div className="absolute top-6 left-6 z-50 pointer-events-auto select-none mix-blend-multiply dark:mix-blend-normal">
+            <h1 className="flex items-baseline gap-3 text-foreground">
+              {/* Brand */}
+              <span className="text-xl font-bold tracking-tight">MatR</span>
+
+              {/* Divider */}
+              <span className="text-foreground/20 font-light text-lg">/</span>
+
+              {/* Context */}
+              <div className="flex flex-col leading-none">
+                <span className="text-sm font-semibold text-foreground/90">Retrofit Pilot</span>
+                <span className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                  No. 33 Link Road
+                </span>
+              </div>
+            </h1>
+          </div>
+
+          {/* Navigation - Top Center Floating */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+            <PageToggle />
+          </div>
+
+          {/* 3. Main UI Overlay (Panels) */}
+          <div className="absolute inset-0 z-10 pointer-events-none [&>*]:pointer-events-auto">
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </div>
+
         </main>
       </body>
     </html>

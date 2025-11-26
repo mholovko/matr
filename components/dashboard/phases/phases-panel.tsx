@@ -1,7 +1,7 @@
 'use client'
 
 import { useAppStore } from '@/lib/store'
-import { ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { ChevronsLeft, GitBranch } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { PhaseSelector } from './phase-selector'
@@ -17,49 +17,75 @@ export function PhasesPanel() {
   return (
     <div
       className={cn(
-        'fixed left-0 top-0 h-screen flex-col shadow-2xl z-40 transition-all duration-300',
-        'border-r border-border bg-background/95 backdrop-blur-sm',
-        'hidden md:flex',
-        isCollapsed ? 'w-12' : 'w-[400px]'
+        'absolute left-4 top-20 z-40 flex flex-col shadow-xl transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1.0)]',
+        'border border-border bg-background/95 backdrop-blur-md overflow-hidden',
+        isCollapsed
+          ? 'w-9 h-9  cursor-pointer hover:bg-muted hover:border-foreground/30 shadow-sm'
+          : 'w-80 bottom-4 '
       )}
+      onClick={() => {
+        if (isCollapsed) setIsCollapsed(false)
+      }}
+      role={isCollapsed ? "button" : "region"}
+      aria-label="Timeline Panel"
     >
-      {/* Header with collapse button */}
-      <div className="flex items-center justify-between p-3 border-b border-border bg-muted/10">
-        {!isCollapsed && (
-          <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-            Phases
-          </h3>
-        )}
+      {/* Header Section */}
+      <div className={cn(
+        "flex items-center shrink-0 transition-all duration-300",
+        isCollapsed
+          ? "w-full h-full justify-center items-center bg-transparent border-0 p-0" // Force centering
+          : "justify-between px-3 py-2 h-10 border-b border-border bg-muted/30"
+      )}>
+
+        {/* Icon & Title Group */}
+        <div className={cn(
+          "flex items-center overflow-hidden transition-all",
+          isCollapsed ? "gap-0 justify-center w-full" : "gap-2" // REMOVE GAP when collapsed
+        )}>
+          <GitBranch className={cn(
+            "shrink-0 text-muted-foreground transition-colors",
+            "w-4 h-4",
+            isCollapsed && "text-foreground"
+          )} />
+
+          <span className={cn(
+            "text-xs font-bold uppercase tracking-widest text-foreground",
+            isCollapsed ? "opacity-0 w-0" : "opacity-100"
+          )}>
+            Timeline
+          </span>
+        </div>
+
+        {/* Collapse Trigger - Only visible when expanded */}
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsCollapsed(true)
+          }}
           className={cn(
-            'h-6 w-6 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors',
-            isCollapsed && 'mx-auto'
+            "h-6 w-6 flex items-center justify-center hover:bg-muted/80 rounded transition-colors text-muted-foreground",
+            isCollapsed ? "hidden" : "flex"
           )}
-          title={isCollapsed ? 'Expand' : 'Collapse'}
+          aria-label="Collapse panel"
         >
-          {isCollapsed ? (
-            <ChevronsRight className="w-4 h-4" />
-          ) : (
-            <ChevronsLeft className="w-4 h-4" />
-          )}
+          <ChevronsLeft className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {!isCollapsed && (
-        <>
-          {/* Phase Selector */}
+      {/* Main Content Area */}
+      <div className={cn(
+        "flex-1 flex flex-col min-h-0 transition-opacity duration-200",
+        isCollapsed ? "opacity-0 pointer-events-none absolute inset-0" : "opacity-100 delay-75"
+      )}>
+        <div className="flex-none bg-muted/5">
           <PhaseSelector />
-
-          {/* Filter Tabs */}
           <PhaseFilterTabs />
+        </div>
 
-          {/* Element List */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <PhaseElementList />
-          </div>
-        </>
-      )}
+        <div className="flex-1 overflow-hidden flex flex-col relative bg-background/50">
+          <PhaseElementList />
+        </div>
+      </div>
     </div>
   )
 }

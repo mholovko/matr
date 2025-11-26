@@ -194,7 +194,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     phases: {
         dataTree: null,
         selectedPhase: null,
-        filterMode: 'diff',
+        filterMode: 'complete',
         colorCodingEnabled: true
     },
 

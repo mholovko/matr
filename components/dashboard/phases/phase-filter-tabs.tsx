@@ -13,69 +13,47 @@ export function PhaseFilterTabs() {
   if (!phaseData) return null
 
   const tabs: Array<{
-    mode: 'complete' | 'new' | 'demolished' | 'diff'
+    mode: 'diff' | 'complete' | 'new' | 'demolished'
     label: string
     count: number
-    icon?: string
+    colorClass: string
   }> = [
-    {
-      mode: 'diff',
-      label: 'Diff',
-      count: phaseData.active.size + phaseData.demolished.size
-    },
-    {
-      mode: 'complete',
-      label: 'Complete',
-      count: phaseData.active.size
-    },
-    {
-      mode: 'new',
-      label: 'New',
-      count: phaseData.created.size,
-      icon: '+'
-    },
-    {
-      mode: 'demolished',
-      label: 'Demolished',
-      count: phaseData.demolished.size,
-      icon: '−'
-    }
-  ]
+      { mode: 'diff', label: 'Diff', count: phaseData.active.size + phaseData.demolished.size, colorClass: 'text-foreground' },
+      { mode: 'complete', label: 'All', count: phaseData.active.size, colorClass: 'text-foreground' },
+      { mode: 'new', label: 'New', count: phaseData.created.size, colorClass: 'text-green-600' },
+      { mode: 'demolished', label: 'Demo', count: phaseData.demolished.size, colorClass: 'text-red-600' }
+    ]
 
-  // Filter out modes with 0 elements
   const availableTabs = tabs.filter(tab => tab.count > 0)
-
   if (availableTabs.length === 0) return null
 
   return (
-    <div className="p-4 space-y-3 border-b border-border">
-      <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        Filter Mode
-      </label>
-      <div className="flex flex-wrap gap-2">
-        {availableTabs.map((tab) => (
-          <button
-            key={tab.mode}
-            onClick={() => setPhaseFilterMode(tab.mode)}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1.5 whitespace-nowrap',
-              filterMode === tab.mode
-                ? 'bg-primary text-primary-foreground border-primary shadow-md'
-                : 'bg-muted/50 text-foreground border-border hover:bg-muted hover:border-foreground/20'
-            )}
-          >
-            {tab.icon && <span className="font-mono text-[10px]">{tab.icon}</span>}
-            <span>{tab.label}</span>
-            <span className={cn(
-              'ml-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold',
-              filterMode === tab.mode
-                ? 'bg-primary-foreground/20'
-                : 'bg-muted text-muted-foreground'
-            )}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
+    <div className="px-3 py-2 border-b border-border bg-background">
+      <div className="flex p-0.5 bg-muted rounded-md w-full">
+        {availableTabs.map((tab) => {
+          const isActive = filterMode === tab.mode
+          return (
+            <button
+              key={tab.mode}
+              onClick={() => setPhaseFilterMode(tab.mode)}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-1 px-2 text-[10px] font-medium rounded-sm transition-all',
+                isActive
+                  ? 'bg-background text-foreground shadow-sm ring-1 ring-border'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+              )}
+            >
+              <span>{tab.label}</span>
+              <span className={cn(
+                'font-mono text-[9px] px-1 rounded-sm bg-muted-foreground/10',
+                tab.colorClass,
+                isActive ? 'opacity-100' : 'opacity-70'
+              )}>
+                {tab.count}
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
