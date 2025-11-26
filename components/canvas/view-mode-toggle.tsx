@@ -43,7 +43,7 @@ export function ViewModeToggle() {
             {/* Selection Mode Dropdown */}
             <div className="relative" ref={selectionMenuRef}>
                 {isSelectionMenuOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-40 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg overflow-hidden flex flex-col p-1 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute bottom-full left-0 mb-2 w-44 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg overflow-hidden flex flex-col p-1 animate-in fade-in zoom-in-95 duration-100">
                         <button
                             onClick={() => { setSelectionMode('assembly'); setIsSelectionMenuOpen(false) }}
                             className={cn(
@@ -63,6 +63,16 @@ export function ViewModeToggle() {
                         >
                             <span className="w-2 h-2 rounded-full bg-green-500 shadow-sm" />
                             Elements
+                        </button>
+                        <button
+                            onClick={() => { setSelectionMode('material'); setIsSelectionMenuOpen(false) }}
+                            className={cn(
+                                "flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors text-left",
+                                selectionMode === 'material' ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"
+                            )}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-orange-500 shadow-sm" />
+                            Material
                         </button>
                     </div>
                 )}

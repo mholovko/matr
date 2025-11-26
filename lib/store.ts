@@ -36,6 +36,10 @@ interface AppState {
     selectedAssemblyId: string | null
     setSelectedAssembly: (id: string | null) => void
 
+    // Material Selection
+    selectedMaterialName: string | null
+    setSelectedMaterial: (materialName: string | null) => void
+
     // View Mode
     viewMode: 'standard' | 'dollhouse'
     setViewMode: (mode: 'standard' | 'dollhouse') => void
@@ -45,8 +49,8 @@ interface AppState {
     setRenderMode: (mode: 'rendered' | 'shaded' | 'technical') => void
 
     // Selection Mode
-    selectionMode: 'assembly' | 'elements'
-    setSelectionMode: (mode: 'assembly' | 'elements') => void
+    selectionMode: 'assembly' | 'elements' | 'material'
+    setSelectionMode: (mode: 'assembly' | 'elements' | 'material') => void
 
     // Interaction State
     isInteracting: boolean
@@ -112,6 +116,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     selectedAssemblyId: null,
     setSelectedAssembly: (id) => set({ selectedAssemblyId: id, isLogOpen: !!id }),
 
+    selectedMaterialName: null,
+    setSelectedMaterial: (materialName) => set({
+        selectedMaterialName: materialName,
+        isLogOpen: !!materialName
+    }),
+
     // View Mode
     viewMode: 'standard',
     setViewMode: (mode) => set({ viewMode: mode }),
@@ -122,7 +132,21 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // Selection Mode
     selectionMode: 'elements',
-    setSelectionMode: (mode) => set({ selectionMode: mode }),
+    setSelectionMode: (mode) => {
+        set({ selectionMode: mode })
+        const state = get()
+
+        // Clear material selection when leaving material mode
+        if (mode !== 'material' && state.selectedMaterialName) {
+            get().setSelectedMaterial(null)
+        }
+
+        // Clear assembly selection when leaving assembly mode
+        if (mode !== 'assembly' && state.selectedAssemblyId) {
+            get().setSelectedAssembly(null)
+            get().clearFilters()
+        }
+    },
 
     // Interaction State (for optimization)
     isInteracting: false,
@@ -231,8 +255,37 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
         }
 
+        // 2.5. Apply Material Filter (if material mode is active)
+        const { selectedMaterialName, selectedAssemblyId } = state
+        let materialFilteredIds: Set<string> | null = null
+
+        if (selectedMaterialName) {
+            const tempMaterialIds = new Set<string>()
+
+            modelElements.forEach(element => {
+                const elementId = element.id
+                if (!elementId) return
+
+                // If assembly is selected, only consider elements from that assembly
+                if (selectedAssemblyId) {
+                    const groupName = element.properties?.groupName
+                    if (groupName !== selectedAssemblyId) return
+                }
+
+                // Check if element has the selected material name
+                const materialQuantities = element.properties?.["Material Quantities"] || {}
+                const materialNames = Object.keys(materialQuantities)
+
+                if (materialNames.includes(selectedMaterialName)) {
+                    tempMaterialIds.add(elementId)
+                }
+            })
+
+            materialFilteredIds = tempMaterialIds
+        }
+
         // 2. Check if any attribute filters are active
-        const hasAttributeFilters = categories.length > 0 || levels.length > 0 || groups.length > 0
+        const hasAttributeFilters = categories.length > 0 || levels.length > 0 || groups.length > 0 || !!selectedMaterialName
 
         // If no filters at all (no phase, no attributes), return null (Show All)
         if (!phaseIds && !hasAttributeFilters) {
@@ -244,6 +297,11 @@ export const useAppStore = create<AppState>((set, get) => ({
             return phaseIds
         }
 
+        // If only material filter (no phase, no other attributes), return material IDs
+        if (materialFilteredIds && !phaseIds && categories.length === 0 && levels.length === 0 && groups.length === 0) {
+            return materialFilteredIds
+        }
+
         // 3. Apply Attribute Filters (and intersect with Phase IDs if present)
         const resultIds = new Set<string>()
 
@@ -253,6 +311,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
             // Check Phase (if active)
             if (phaseIds && !phaseIds.has(elementId)) return
+
+            // Check Material Filter (if active)
+            if (materialFilteredIds && !materialFilteredIds.has(elementId)) return
 
             // Check Category
             if (categories.length > 0) {

@@ -25,7 +25,7 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true, isPrimaryModel = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting, selectionMode } = useAppStore(
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting, selectionMode, selectedMaterialName } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             setLoading: state.setLoading,
@@ -38,6 +38,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             phases: state.phases,
             isInteracting: state.isInteracting,
             selectionMode: state.selectionMode,
+            selectedMaterialName: state.selectedMaterialName,
         }))
     )
     const { controls, camera } = useThree()
@@ -200,12 +201,12 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         })
 
         batcher.setFilter(visibleSet)
-    }, [sceneGroup, filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, enableFiltering]) // Added dependencies for useCallback
+    }, [sceneGroup, filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, selectedMaterialName, enableFiltering]) // Added dependencies for useCallback
 
     // Trigger filters when state changes
     useEffect(() => {
         applyFilters()
-    }, [filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, applyFilters])
+    }, [filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, selectedMaterialName, applyFilters])
 
     // Update sector based on camera position
     useFrame(({ camera }) => {
@@ -340,6 +341,49 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                             ...batchObject.properties
                         })
                         setSelectedAssembly(null)
+                    } else if (selectionMode === 'material') {
+                        // Material mode: similar to assembly mode - first click filters, second click selects
+                        const materialQuantities = batchObject.properties?.["Material Quantities"] || {}
+                        const materialNames = Object.keys(materialQuantities)
+
+                        if (materialNames.length > 0) {
+                            // Pick the material with highest volume (dominant material)
+                            const sortedMaterials = materialNames
+                                .map(name => ({
+                                    name,
+                                    volume: materialQuantities[name]?.volume?.value || 0
+                                }))
+                                .sort((a, b) => b.volume - a.volume)
+
+                            const dominantMaterial = sortedMaterials[0].name
+                            const { selectedMaterialName, setSelectedMaterial } = useAppStore.getState()
+
+                            if (selectedMaterialName === dominantMaterial) {
+                                // Already viewing this material -> select the element
+                                setSelectedElement(batchObject.elementId, {
+                                    id: batchObject.elementId,
+                                    speckle_type: batchObject.speckleType,
+                                    properties: batchObject.properties,
+                                    ...batchObject.properties
+                                })
+                            } else {
+                                // Not viewing this material -> filter by material
+                                console.log(`Material mode: Filtering by material "${dominantMaterial}"`)
+                                setSelectedMaterial(dominantMaterial)
+                                setSelectedElement(null, undefined)
+                            }
+
+                            // Assembly scope is handled automatically in getFilteredElementIds()
+                        } else {
+                            // Element has no materials - fallback to normal selection
+                            setSelectedElement(batchObject.elementId, {
+                                id: batchObject.elementId,
+                                speckle_type: batchObject.speckleType,
+                                properties: batchObject.properties,
+                                ...batchObject.properties
+                            })
+                            useAppStore.getState().setSelectedMaterial(null)
+                        }
                     } else if (selectedAssemblyId === groupName) {
                         // Assembly mode: already viewing this assembly -> select the element
                         setSelectedElement(batchObject.elementId, {
@@ -374,6 +418,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                         useAppStore.getState().clearFilters()
                     }
                     useAppStore.getState().setSelectedAssembly(null)
+                    useAppStore.getState().setSelectedMaterial(null)
                 }
             })
         }
