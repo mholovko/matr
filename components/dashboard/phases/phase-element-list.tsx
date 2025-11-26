@@ -51,15 +51,14 @@ const ElementListItem = memo(({ element, status, onClick, style }: {
 ElementListItem.displayName = 'ElementListItem'
 
 export function PhaseElementList() {
-  const { phases, modelElements, setSelectedElement } = useAppStore()
-  const [searchTerm, setSearchTerm] = useState('')
+  const { phases, modelElements, setSelectedElement, searchTerm, setSearchTerm } = useAppStore()
 
   // 1. Filtering Logic
   const filteredElementIds = useMemo(() => {
     const ids = useAppStore.getState().getFilteredElementIds()
     if (ids === null) return useAppStore.getState().modelElements.map(el => el.id).filter(Boolean) as string[]
     return Array.from(ids)
-  }, [phases.selectedPhase, phases.filterMode, phases.dataTree, useAppStore.getState().filters])
+  }, [phases.selectedPhase, phases.filterMode, phases.dataTree, useAppStore.getState().filters, searchTerm])
 
   const getElementStatus = (elementId: string): 'created' | 'demolished' | 'existing' => {
     if (!phases.dataTree || !phases.selectedPhase) return 'existing'
@@ -79,9 +78,10 @@ export function PhaseElementList() {
 
   // 3. Sorting
   const displayedElements = useMemo(() => {
+    // The filtering is now handled globally by getFilteredElementIds, so we just map the IDs to elements
     const elements = filteredElementIds
       .map((id) => elementMap.get(id))
-      .filter((el) => el && (el.name?.toLowerCase().includes(searchTerm.toLowerCase()) || el.id?.toLowerCase().includes(searchTerm.toLowerCase())))
+      .filter((el) => el) // Filter out undefineds if any
 
     return elements.sort((a, b) => {
       const statusA = getElementStatus(a?.id || '')
@@ -90,7 +90,7 @@ export function PhaseElementList() {
       if (weights[statusA] !== weights[statusB]) return weights[statusA] - weights[statusB]
       return (a?.name || '').localeCompare(b?.name || '')
     })
-  }, [filteredElementIds, searchTerm, elementMap, phases.selectedPhase])
+  }, [filteredElementIds, elementMap, phases.selectedPhase])
 
   // Virtual Scroll Config
   const ITEM_HEIGHT = 32

@@ -15,7 +15,8 @@ export function CircularDashboard() {
         filters,
         selectedMaterialName,
         selectedAssemblyId,
-        phases
+        phases,
+        searchTerm
     } = useAppStore(
         useShallow((state) => ({
             modelElements: state.modelElements,
@@ -25,7 +26,8 @@ export function CircularDashboard() {
             filters: state.filters,
             selectedMaterialName: state.selectedMaterialName,
             selectedAssemblyId: state.selectedAssemblyId,
-            phases: state.phases
+            phases: state.phases,
+            searchTerm: state.searchTerm
         }))
     )
 
@@ -54,7 +56,8 @@ export function CircularDashboard() {
         selectedMaterialName,
         selectedAssemblyId,
         phases.selectedPhase,
-        phases.filterMode
+        phases.filterMode,
+        searchTerm
     ])
 
     // Aggregate materials and calculate component inventory

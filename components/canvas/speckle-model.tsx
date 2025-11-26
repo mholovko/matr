@@ -25,7 +25,7 @@ interface SpeckleModelProps {
 export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true, isPrimaryModel = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting, selectionMode, selectedMaterialName } = useAppStore(
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting, selectionMode, selectedMaterialName, searchTerm } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             setLoading: state.setLoading,
@@ -39,6 +39,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             isInteracting: state.isInteracting,
             selectionMode: state.selectionMode,
             selectedMaterialName: state.selectedMaterialName,
+            searchTerm: state.searchTerm
         }))
     )
     const { controls, camera } = useThree()
@@ -225,16 +226,18 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 if (!isHiddenByDollhouse) {
                     visibleSet.add(obj.elementId)
                 }
+
             })
+
         })
 
         batcher.setFilter(visibleSet)
-    }, [sceneGroup, filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, selectedMaterialName, enableFiltering]) // Added dependencies for useCallback
+    }, [sceneGroup, filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, selectedMaterialName, enableFiltering, searchTerm]) // Added dependencies for useCallback
 
     // Trigger filters when state changes
     useEffect(() => {
         applyFilters()
-    }, [filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, selectedMaterialName, applyFilters])
+    }, [filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, selectedMaterialName, applyFilters, searchTerm])
 
     // Update sector based on camera position
     useFrame(({ camera }) => {

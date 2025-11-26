@@ -70,6 +70,10 @@ interface AppState {
     toggleGroupFilter: (group: string) => void
     clearFilters: () => void
 
+    // Search
+    searchTerm: string
+    setSearchTerm: (term: string) => void
+
     isLogOpen: boolean
     toggleLog: (isOpen: boolean) => void
     logActiveTab: 'materials' | 'carbon' | 'docs'
@@ -168,6 +172,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         groups: []
     },
 
+    searchTerm: '',
+    setSearchTerm: (term) => set({ searchTerm: term }),
+
     isLogOpen: false,
     logActiveTab: 'materials',
     setLogActiveTab: (tab) => set({ logActiveTab: tab }),
@@ -231,6 +238,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         const state = get()
         const { dataTree, selectedPhase, filterMode } = state.phases
         const { categories, levels, groups } = state.filters
+        const searchTerm = state.searchTerm.toLowerCase().trim()
         const modelElements = state.modelElements
 
         // 1. Calculate Phase IDs
@@ -285,7 +293,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
 
         // 2. Check if any attribute filters are active
-        const hasAttributeFilters = categories.length > 0 || levels.length > 0 || groups.length > 0 || !!selectedMaterialName
+        const hasAttributeFilters = categories.length > 0 || levels.length > 0 || groups.length > 0 || !!selectedMaterialName || !!searchTerm
 
         // If no filters at all (no phase, no attributes), return null (Show All)
         if (!phaseIds && !hasAttributeFilters) {
@@ -298,7 +306,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
 
         // If only material filter (no phase, no other attributes), return material IDs
-        if (materialFilteredIds && !phaseIds && categories.length === 0 && levels.length === 0 && groups.length === 0) {
+        if (materialFilteredIds && !phaseIds && categories.length === 0 && levels.length === 0 && groups.length === 0 && !searchTerm) {
             return materialFilteredIds
         }
 
@@ -331,6 +339,13 @@ export const useAppStore = create<AppState>((set, get) => ({
             if (groups.length > 0) {
                 const groupName = element.properties?.groupName
                 if (!groups.includes(groupName)) return
+            }
+
+            // Check Search Term
+            if (searchTerm) {
+                const name = element.name?.toLowerCase() || ''
+                const id = element.id?.toLowerCase() || ''
+                if (!name.includes(searchTerm) && !id.includes(searchTerm)) return
             }
 
             resultIds.add(elementId)
