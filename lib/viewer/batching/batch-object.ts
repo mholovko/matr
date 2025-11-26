@@ -15,6 +15,8 @@ export class BatchObject {
     // State
     public visible: boolean = true
 
+    // Material
+    public materialName: string | null = null
 
     // Face range in the merged geometry (for raycasting)
     public startFaceIndex: number = 0

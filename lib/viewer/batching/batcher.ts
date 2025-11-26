@@ -20,6 +20,9 @@ export class Batcher {
         existing: THREE.MeshStandardMaterial
     } | null = null
 
+    // Material Lookup
+    private materialLookup: Map<string, string> = new Map()
+
     constructor() { }
 
     public makeBatches(renderViews: RenderView[], renderBackFaces: boolean = false) {
@@ -141,7 +144,22 @@ export class Batcher {
 
             currentVertices += vertCount
             currentGeometries.push(geometry)
-            currentBatchObjects.push(new BatchObject(rv, 0))
+
+            const batchObj = new BatchObject(rv, 0)
+
+            // Lookup and store material name for this mesh
+            if (rv.meshId) {
+                if (this.materialLookup.has(rv.meshId)) {
+                    batchObj.materialName = this.materialLookup.get(rv.meshId)!
+                    console.log(`✓ Mesh ${rv.meshId} → Material: ${batchObj.materialName}`)
+                } else {
+                    console.warn(`✗ Mesh ${rv.meshId} not found in material lookup`)
+                }
+            } else {
+                console.warn('✗ RenderView has no meshId')
+            }
+
+            currentBatchObjects.push(batchObj)
         })
 
         flush() // Final flush
@@ -153,6 +171,15 @@ export class Batcher {
 
     public getBatches() {
         return Object.values(this.batches)
+    }
+
+    public setMaterialLookup(lookup: Map<string, string>) {
+        this.materialLookup = lookup
+        console.log(`Batcher: Set material lookup with ${lookup.size} mesh-material mappings`)
+    }
+
+    public getMaterialForMesh(meshId: string): string | null {
+        return this.materialLookup.get(meshId) || null
     }
 
     /**

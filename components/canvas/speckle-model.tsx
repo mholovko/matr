@@ -56,6 +56,24 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 const renderViews = convertToRenderViews(root)
                 console.log(`Converted ${renderViews.length} render views`)
 
+                // 2.5. Extract material lookup map from renderMaterialProxies
+                const materialLookup = new Map<string, string>() // meshId → materialName
+
+                if (root.renderMaterialProxies && Array.isArray(root.renderMaterialProxies)) {
+                    root.renderMaterialProxies.forEach((proxy: any) => {
+                        const materialName = proxy.value?.name
+                        const objectIds = proxy.objects || []
+
+                        if (materialName && Array.isArray(objectIds)) {
+                            objectIds.forEach((meshId: string) => {
+                                materialLookup.set(meshId, materialName)
+                            })
+                        }
+                    })
+                }
+
+                console.log(`Built material lookup map with ${materialLookup.size} mesh-material mappings`)
+
                 // 3. Extract metadata for the store (still needed for filtering UI)
                 const allElements: SpeckleObject[] = []
                 const traverse = (obj: SpeckleObject) => {
@@ -79,6 +97,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 // 4. NEW: Create Batcher and build batches
                 const { Batcher } = await import('@/lib/viewer/batching/batcher')
                 const batcher = new Batcher()
+                batcher.setMaterialLookup(materialLookup)
                 batcher.makeBatches(renderViews, renderBackFaces)
 
                 const batches = batcher.getBatches()
@@ -342,23 +361,16 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                         })
                         setSelectedAssembly(null)
                     } else if (selectionMode === 'material') {
-                        // Material mode: similar to assembly mode - first click filters, second click selects
-                        const materialQuantities = batchObject.properties?.["Material Quantities"] || {}
-                        const materialNames = Object.keys(materialQuantities)
+                        // Material mode: filter by the specific mesh's material
+                        const meshMaterialName = batchObject.materialName
 
-                        if (materialNames.length > 0) {
-                            // Pick the material with highest volume (dominant material)
-                            const sortedMaterials = materialNames
-                                .map(name => ({
-                                    name,
-                                    volume: materialQuantities[name]?.volume?.value || 0
-                                }))
-                                .sort((a, b) => b.volume - a.volume)
+                        if (meshMaterialName) {
+                            // Use mesh-specific material
+                            console.log(`Clicked mesh has material: "${meshMaterialName}"`)
 
-                            const dominantMaterial = sortedMaterials[0].name
                             const { selectedMaterialName, setSelectedMaterial } = useAppStore.getState()
 
-                            if (selectedMaterialName === dominantMaterial) {
+                            if (selectedMaterialName === meshMaterialName) {
                                 // Already viewing this material -> select the element
                                 setSelectedElement(batchObject.elementId, {
                                     id: batchObject.elementId,
@@ -367,22 +379,50 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                                     ...batchObject.properties
                                 })
                             } else {
-                                // Not viewing this material -> filter by material
-                                console.log(`Material mode: Filtering by material "${dominantMaterial}"`)
-                                setSelectedMaterial(dominantMaterial)
+                                // Not viewing this material -> filter by it
+                                console.log(`Material mode: Filtering by material "${meshMaterialName}"`)
+                                setSelectedMaterial(meshMaterialName)
                                 setSelectedElement(null, undefined)
                             }
-
-                            // Assembly scope is handled automatically in getFilteredElementIds()
                         } else {
-                            // Element has no materials - fallback to normal selection
-                            setSelectedElement(batchObject.elementId, {
-                                id: batchObject.elementId,
-                                speckle_type: batchObject.speckleType,
-                                properties: batchObject.properties,
-                                ...batchObject.properties
-                            })
-                            useAppStore.getState().setSelectedMaterial(null)
+                            // Mesh has no material mapping - fallback to element-level material
+                            console.warn('No material mapping for clicked mesh, using element-level material')
+
+                            const materialQuantities = batchObject.properties?.["Material Quantities"] || {}
+                            const materialNames = Object.keys(materialQuantities)
+
+                            if (materialNames.length > 0) {
+                                const sortedMaterials = materialNames
+                                    .map(name => ({
+                                        name,
+                                        volume: materialQuantities[name]?.volume?.value || 0
+                                    }))
+                                    .sort((a, b) => b.volume - a.volume)
+
+                                const dominantMaterial = sortedMaterials[0].name
+                                const { selectedMaterialName, setSelectedMaterial } = useAppStore.getState()
+
+                                if (selectedMaterialName === dominantMaterial) {
+                                    setSelectedElement(batchObject.elementId, {
+                                        id: batchObject.elementId,
+                                        speckle_type: batchObject.speckleType,
+                                        properties: batchObject.properties,
+                                        ...batchObject.properties
+                                    })
+                                } else {
+                                    setSelectedMaterial(dominantMaterial)
+                                    setSelectedElement(null, undefined)
+                                }
+                            } else {
+                                // No materials at all
+                                setSelectedElement(batchObject.elementId, {
+                                    id: batchObject.elementId,
+                                    speckle_type: batchObject.speckleType,
+                                    properties: batchObject.properties,
+                                    ...batchObject.properties
+                                })
+                                useAppStore.getState().setSelectedMaterial(null)
+                            }
                         }
                     } else if (selectedAssemblyId === groupName) {
                         // Assembly mode: already viewing this assembly -> select the element

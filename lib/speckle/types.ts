@@ -5,6 +5,7 @@ export interface SpeckleMesh {
     vertices: number[]
     faces: number[]
     colors?: number[]
+    applicationId?: string  // Revit GUID used for material mapping
 }
 
 export type SpeckleParameter = { value?: any } | any

@@ -9,6 +9,7 @@ export interface RenderView {
     transform: THREE.Matrix4
     properties: any
     aabb?: THREE.Box3
+    meshId?: string  // Individual mesh ID for material lookup
 }
 
 export function convertToRenderViews(obj: SpeckleObject, parentTransform = new THREE.Matrix4()): RenderView[] {
@@ -29,7 +30,8 @@ export function convertToRenderViews(obj: SpeckleObject, parentTransform = new T
                     geometry: geometry,
                     transform: parentTransform.clone(), // Store current transform
                     properties: obj.properties || obj,
-                    aabb: aabb
+                    aabb: aabb,
+                    meshId: meshData.applicationId || meshData.id  // Store applicationId for material lookup (fallback to id)
                 })
             }
         })
