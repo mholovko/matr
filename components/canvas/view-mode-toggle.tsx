@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store"
 import { useShallow } from "zustand/react/shallow"
 import { cn } from "@/lib/utils"
-import { Box, Layers, Palette, MousePointerClick } from "lucide-react"
+import { Box, Layers, Palette, MousePointerClick, Package, BrickWall } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
 export function ViewModeToggle() {
@@ -84,7 +84,13 @@ export function ViewModeToggle() {
                     )}
                     title="Selection Mode"
                 >
-                    <MousePointerClick className="w-4 h-4" />
+                    {selectionMode === 'assembly' ? (
+                        <Package className="w-4 h-4" />
+                    ) : selectionMode === 'material' ? (
+                        <BrickWall className="w-4 h-4" />
+                    ) : (
+                        <MousePointerClick className="w-4 h-4" />
+                    )}
                 </button>
             </div>
 

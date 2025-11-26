@@ -3,10 +3,7 @@ import { ChevronsRight } from "lucide-react"
 import { useAppStore } from "@/lib/store"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { FilterControls } from "../filter-controls"
-import { LogContent } from "./log-content"
-
-import { AssemblyContent } from "./assembly-content"
+import { CircularDashboard } from "../circular/circular-dashboard"
 
 export function LogPanel() {
     const selectedElementId = useAppStore(state => state.selectedElementId)
@@ -30,7 +27,7 @@ export function LogPanel() {
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-primary animate-pulse" />
                         <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-                            {selectedElementId ? "Element Details" : (selectedAssemblyId ? "Assembly Details" : "Model Filters")}
+                            Dashboard
                         </h3>
                     </div>
                 )}
@@ -46,18 +43,7 @@ export function LogPanel() {
             </div>
 
             {!isCollapsed && (
-                <>
-                    {selectedElementId ? (
-                        // ELEMENT DETAILS MODE
-                        <LogContent />
-                    ) : selectedAssemblyId ? (
-                        // ASSEMBLY DETAILS MODE
-                        <AssemblyContent />
-                    ) : (
-                        // FILTER MODE
-                        <FilterControls />
-                    )}
-                </>
+                <CircularDashboard />
             )}
         </aside>
     )
