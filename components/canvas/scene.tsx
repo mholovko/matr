@@ -50,8 +50,6 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
     const elementsModelId = process.env.NEXT_PUBLIC_SPECKLE_MODEL_ID
     const roomsModelId = process.env.NEXT_PUBLIC_SPECKLE_ROOMS_MODEL_ID
 
-    const modelId = modelType === 'rooms' ? roomsModelId : elementsModelId
-
     useEffect(() => {
         const handlePointerMove = (e: PointerEvent) => {
             // If orbit control is dragging and mouse has moved, mark it
@@ -174,6 +172,7 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
                                     renderBackFaces={true}
                                     enableFiltering={enableFiltering}
                                     enableSelection={enableSelection && modelType === 'rooms'}
+                                    isPrimaryModel={false}
                                 />
                             )}
                         </>

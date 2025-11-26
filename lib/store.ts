@@ -44,6 +44,10 @@ interface AppState {
     renderMode: 'rendered' | 'shaded' | 'technical'
     setRenderMode: (mode: 'rendered' | 'shaded' | 'technical') => void
 
+    // Selection Mode
+    selectionMode: 'assembly' | 'elements'
+    setSelectionMode: (mode: 'assembly' | 'elements') => void
+
     // Interaction State
     isInteracting: boolean
     setIsInteracting: (isInteracting: boolean) => void
@@ -98,7 +102,7 @@ interface AppState {
     setSelectedPhase: (phase: string | null) => void
     setPhaseFilterMode: (mode: 'complete' | 'new' | 'demolished' | 'diff') => void
     setPhaseColorCoding: (enabled: boolean) => void
-    getFilteredElementIds: () => Set<string>
+    getFilteredElementIds: () => Set<string> | null
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -115,6 +119,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Render Mode
     renderMode: 'rendered',
     setRenderMode: (mode) => set({ renderMode: mode }),
+
+    // Selection Mode
+    selectionMode: 'elements',
+    setSelectionMode: (mode) => set({ selectionMode: mode }),
 
     // Interaction State (for optimization)
     isInteracting: false,
@@ -198,27 +206,76 @@ export const useAppStore = create<AppState>((set, get) => ({
     getFilteredElementIds: () => {
         const state = get()
         const { dataTree, selectedPhase, filterMode } = state.phases
+        const { categories, levels, groups } = state.filters
+        const modelElements = state.modelElements
 
-        if (!dataTree || !selectedPhase) return new Set()
+        // 1. Calculate Phase IDs
+        let phaseIds: Set<string> | null = null
 
-        const phaseData = dataTree.elementsByPhase[selectedPhase]
-        if (!phaseData) return new Set()
-
-        if (filterMode === 'complete') {
-            return phaseData.active
-        } else if (filterMode === 'new') {
-            return phaseData.created
-        } else if (filterMode === 'demolished') {
-            return phaseData.demolished
-        } else if (filterMode === 'diff') {
-            // Return active elements + demolished elements (complete view with demolished visible)
-            const diff = new Set<string>()
-            phaseData.active.forEach(id => diff.add(id))
-            phaseData.demolished.forEach(id => diff.add(id))
-            return diff
+        if (dataTree && selectedPhase) {
+            const phaseData = dataTree.elementsByPhase[selectedPhase]
+            if (phaseData) {
+                if (filterMode === 'complete') {
+                    phaseIds = phaseData.active
+                } else if (filterMode === 'new') {
+                    phaseIds = phaseData.created
+                } else if (filterMode === 'demolished') {
+                    phaseIds = phaseData.demolished
+                } else if (filterMode === 'diff') {
+                    // Return active elements + demolished elements
+                    const diff = new Set<string>()
+                    phaseData.active.forEach(id => diff.add(id))
+                    phaseData.demolished.forEach(id => diff.add(id))
+                    phaseIds = diff
+                }
+            }
         }
 
-        return new Set()
+        // 2. Check if any attribute filters are active
+        const hasAttributeFilters = categories.length > 0 || levels.length > 0 || groups.length > 0
+
+        // If no filters at all (no phase, no attributes), return null (Show All)
+        if (!phaseIds && !hasAttributeFilters) {
+            return null as any // Type cast to satisfy signature if needed, or update signature
+        }
+
+        // If only phase filters, return phase IDs
+        if (phaseIds && !hasAttributeFilters) {
+            return phaseIds
+        }
+
+        // 3. Apply Attribute Filters (and intersect with Phase IDs if present)
+        const resultIds = new Set<string>()
+
+        modelElements.forEach(element => {
+            const elementId = element.id
+            if (!elementId) return
+
+            // Check Phase (if active)
+            if (phaseIds && !phaseIds.has(elementId)) return
+
+            // Check Category
+            if (categories.length > 0) {
+                const category = element.category || element.properties?.builtInCategory?.replace("OST_", "")
+                if (!categories.includes(category)) return
+            }
+
+            // Check Level
+            if (levels.length > 0) {
+                const level = element.level || element.properties?.Parameters?.["Instance Parameters"]?.Constraints?.["Base Constraint"]?.value
+                if (!levels.includes(level)) return
+            }
+
+            // Check Group
+            if (groups.length > 0) {
+                const groupName = element.properties?.groupName
+                if (!groups.includes(groupName)) return
+            }
+
+            resultIds.add(elementId)
+        })
+
+        return resultIds
     },
 
     setSelectedElement: (id, data) => set({

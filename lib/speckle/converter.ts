@@ -57,37 +57,3 @@ export function convertSpeckleMesh(data: SpeckleMesh): THREE.BufferGeometry | nu
 
     return geometry
 }
-
-/**
- * Recursively traverses a Speckle Object Tree and builds a THREE.Group
- */
-export function convertSpeckleObject(obj: SpeckleObject): THREE.Object3D | null {
-    // If it's a container (like a Revit Category), return a Group
-    const group = new THREE.Group()
-    group.userData = { ...obj } // Store metadata
-
-    // 1. Does it have direct geometry? (Visual representation)
-    if (obj.displayValue) {
-        obj.displayValue.forEach((meshData) => {
-            const geometry = convertSpeckleMesh(meshData)
-            if (geometry) {
-                const material = new THREE.MeshStandardMaterial({
-                    color: 0xe2e8f0,
-                    side: THREE.DoubleSide
-                })
-                const mesh = new THREE.Mesh(geometry, material)
-
-                // Link back to the parent object ID for selection
-                mesh.userData = {
-                    parentId: obj.id, // The "Wall" ID, not the mesh ID
-                    speckleType: obj.speckle_type,
-                    properties: obj.properties || obj,
-                    fullElement: obj // Store the complete element for selection
-                }
-                group.add(mesh)
-            }
-        })
-    }
-
-    return group.children.length > 0 ? group : null
-}

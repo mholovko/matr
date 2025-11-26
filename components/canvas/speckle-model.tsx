@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import * as THREE from 'three'
 import { useAppStore } from '@/lib/store'
 import { useShallow } from 'zustand/react/shallow'
 import { fetchSpeckleData } from '@/lib/speckle/loader'
-import { convertSpeckleObject } from '@/lib/speckle/converter'
 import { SpeckleObject } from '@/lib/speckle/types'
 import { useThree, ThreeEvent, useFrame } from '@react-three/fiber'
 import type { OrbitControls } from 'three-stdlib'
@@ -20,12 +19,13 @@ interface SpeckleModelProps {
     renderBackFaces?: boolean
     enableFiltering?: boolean
     enableSelection?: boolean
+    isPrimaryModel?: boolean
 }
 
-export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true }: SpeckleModelProps) {
+export function SpeckleModel({ projectId, modelId, visible = true, renderBackFaces = false, enableFiltering = true, enableSelection = true, isPrimaryModel = true }: SpeckleModelProps) {
     const [sceneGroup, setSceneGroup] = useState<THREE.Group | null>(null)
     const [pointerDown, setPointerDown] = useState<{ x: number; y: number } | null>(null)
-    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting } = useAppStore(
+    const { setSelectedElement, setLoading, selectedElementId, setModelElements, filters, selectedAssemblyId, renderMode, setPhaseDataTree, phases, isInteracting, selectionMode } = useAppStore(
         useShallow((state) => ({
             setSelectedElement: state.setSelectedElement,
             setLoading: state.setLoading,
@@ -37,9 +37,10 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             setPhaseDataTree: state.setPhaseDataTree,
             phases: state.phases,
             isInteracting: state.isInteracting,
+            selectionMode: state.selectionMode,
         }))
     )
-    const { controls } = useThree()
+    const { controls, camera } = useThree()
 
     useEffect(() => {
         const load = async () => {
@@ -49,33 +50,21 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                 const root = await fetchSpeckleData(projectId, modelId) as SpeckleObject
                 console.log("Speckle Root Object:", root)
 
-                // 2. Traverse & Convert
-                const container = new THREE.Group()
-                const allElements: SpeckleObject[] = []
-                let meshCount = 0
+                // 2. NEW: Convert to RenderViews instead of creating meshes
+                const { convertToRenderViews } = await import('@/lib/viewer/converter')
+                const renderViews = convertToRenderViews(root)
+                console.log(`Converted ${renderViews.length} render views`)
 
-                // Helper to recursively parse the tree
+                // 3. Extract metadata for the store (still needed for filtering UI)
+                const allElements: SpeckleObject[] = []
                 const traverse = (obj: SpeckleObject) => {
-                    // Collect element if it has properties (is a building element)
                     if (obj.id && obj.properties) {
                         allElements.push(obj)
                     }
-
-                    // Convert current object if it has display geometry
-                    const meshGroup = convertSpeckleObject(obj)
-                    if (meshGroup) {
-                        container.add(meshGroup)
-                        meshCount++
-                    }
-
-                    // Check for children (Speckle structures vary: usually 'elements', '@elements', or array props)
-                    // Also check for specific Revit categories which might be direct properties
                     const children = obj.elements || obj['@elements'] || []
-
                     if (Array.isArray(children)) {
                         children.forEach(traverse)
                     } else {
-                        // Fallback: iterate over all keys to find arrays of objects (common in some Speckle converters)
                         Object.values(obj).forEach(val => {
                             if (Array.isArray(val) && val.length > 0 && (val[0] as SpeckleObject).id) {
                                 val.forEach((child: SpeckleObject) => traverse(child))
@@ -83,51 +72,53 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
                         })
                     }
                 }
-
                 traverse(root)
-                console.log(`Created ${meshCount} mesh groups. Container has ${container.children.length} children.`)
                 console.log(`Collected ${allElements.length} building elements`)
 
-                // Apply Revit Z-up rotation to the container immediately
+                // 4. NEW: Create Batcher and build batches
+                const { Batcher } = await import('@/lib/viewer/batching/batcher')
+                const batcher = new Batcher()
+                batcher.makeBatches(renderViews, renderBackFaces)
+
+                const batches = batcher.getBatches()
+                console.log(`Created ${batches.length} batches (was ${allElements.length} individual meshes)`)
+
+                // 5. Create container and add batched meshes
+                const container = new THREE.Group()
+                batches.forEach(batch => {
+                    container.add(batch.mesh)
+                })
+
+                // Apply Revit Z-up rotation to the container
                 container.rotation.x = -Math.PI / 2
 
-                // Store all elements in the app state ONLY if visible
-                if (visible) {
-                    setModelElements(allElements)
-                    // Build phase data tree for phase filtering
-                    const phaseTree = buildPhaseDataTree(allElements, phasesOrder)
-                    setPhaseDataTree(phaseTree)
-                }
-
-                // Handle Units (Simple heuristic for now)
-                // Calculate initial bounds to check size
+                // Handle Units - Calculate bounds
                 const box = new THREE.Box3().setFromObject(container)
                 const size = box.getSize(new THREE.Vector3())
                 const center = box.getCenter(new THREE.Vector3())
-                const min = box.min
-                const max = box.max
 
                 console.log("=== MODEL BOUNDS ===")
                 console.log("Size:", { x: size.x, y: size.y, z: size.z })
                 console.log("Center:", { x: center.x, y: center.y, z: center.z })
-                console.log("Min:", { x: min.x, y: min.y, z: min.z })
-                console.log("Max:", { x: max.x, y: max.y, z: max.z })
                 console.log("===================")
 
-                // If the model is huge (>1000 units), assume it's Millimeters and scale to Meters
+                // If the model is huge (>1000 units), scale from mm to m
                 if (size.length() > 1000) {
                     console.log("Scaling model from mm to m (0.001)")
                     container.scale.set(0.001, 0.001, 0.001)
-
-                    // Recalculate bounds after scaling
-                    const scaledBox = new THREE.Box3().setFromObject(container)
-                    const scaledSize = scaledBox.getSize(new THREE.Vector3())
-                    const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
-                    console.log("=== SCALED MODEL BOUNDS ===")
-                    console.log("Scaled Size:", { x: scaledSize.x, y: scaledSize.y, z: scaledSize.z })
-                    console.log("Scaled Center:", { x: scaledCenter.x, y: scaledCenter.y, z: scaledCenter.z })
-                    console.log("===========================")
                 }
+
+                // Store all elements in the app state (ONLY if primary model)
+                if (isPrimaryModel) {
+                    setModelElements(allElements)
+                    const phaseTree = buildPhaseDataTree(allElements, phasesOrder)
+                    console.log('Phase tree created:', phaseTree)
+                    setPhaseDataTree(phaseTree)
+                    console.log('Default phase set to:', phaseTree?.phasesByOrder[phaseTree.phasesByOrder.length - 1])
+                }
+
+                // Store the batcher instance in userData for later access
+                container.userData.batcher = batcher
 
                 setSceneGroup(container)
 
@@ -139,20 +130,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         }
 
         load()
-    }, [projectId, modelId, setLoading, setModelElements]) // Removed visible from dependency to avoid reloading on toggle
-
-    // Update store when visibility changes
-    useEffect(() => {
-        if (visible && sceneGroup) {
-            const allElements: SpeckleObject[] = []
-            sceneGroup.traverse((obj) => {
-                if (obj.userData.id && obj.userData.properties) {
-                    allElements.push(obj.userData as SpeckleObject)
-                }
-            })
-            setModelElements(allElements)
-        }
-    }, [visible, sceneGroup, setModelElements])
+    }, [projectId, modelId, setLoading, setModelElements])
 
     // Enable pointer events on meshes after scene is loaded
     useEffect(() => {
@@ -167,8 +145,67 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
     }, [sceneGroup])
 
     // Dollhouse Logic
-    const [currentSector, setCurrentSector] = useState<DollhouseSide[]>([])
+    // Using ref instead of state to avoid re-renders on every frame
+    const currentSectorRef = useRef<DollhouseSide[]>([])
     const { viewMode } = useAppStore(useShallow(state => ({ viewMode: state.viewMode })))
+
+    // Unified Filtering Logic
+    const applyFilters = useCallback(() => {
+        const batcher = sceneGroup?.userData.batcher
+        if (!batcher) return
+
+        // If filtering is disabled, show all elements
+        if (!enableFiltering) {
+            batcher.setFilter(null)
+            return
+        }
+
+        const state = useAppStore.getState()
+        const filteredIds = state.getFilteredElementIds()
+        const isDollhouse = state.viewMode === 'dollhouse' && currentSectorRef.current.length > 0 && !state.selectedAssemblyId
+
+        if (!isDollhouse) {
+            batcher.setFilter(filteredIds)
+            return
+        }
+
+        // Dollhouse logic
+        const visibleSet = new Set<string>()
+        const sectors = currentSectorRef.current
+
+        // Iterate all batches to determine visibility
+        // This is necessary because we need to check groupName property for Dollhouse
+        Object.values(batcher.batches).forEach((batch: any) => {
+            batch.batchObjects.forEach((obj: any) => {
+                // 1. Check Base Filters
+                if (filteredIds && !filteredIds.has(obj.elementId)) return
+
+                // 2. Check Dollhouse
+                const groupName = obj.properties?.groupName
+                let isHiddenByDollhouse = false
+                if (groupName) {
+                    for (const sector of sectors) {
+                        const hiddenGroups = DOLLHOUSE_CONFIG[sector]
+                        if (hiddenGroups && hiddenGroups.includes(groupName)) {
+                            isHiddenByDollhouse = true
+                            break
+                        }
+                    }
+                }
+
+                if (!isHiddenByDollhouse) {
+                    visibleSet.add(obj.elementId)
+                }
+            })
+        })
+
+        batcher.setFilter(visibleSet)
+    }, [sceneGroup, filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, enableFiltering]) // Added dependencies for useCallback
+
+    // Trigger filters when state changes
+    useEffect(() => {
+        applyFilters()
+    }, [filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, applyFilters])
 
     // Update sector based on camera position
     useFrame(({ camera }) => {
@@ -177,15 +214,28 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         const orbitControls = controls as unknown as OrbitControls
         const target = orbitControls?.target || new THREE.Vector3(0, 0, 0)
 
-        // Simple throttling or check every frame? 
-        // For smoothness, every frame is fine, but state update only on change
         const newSector = getSectorFromCamera(camera, target)
 
-        // Array comparison
-        if (newSector.length !== currentSector.length || !newSector.every((val, index) => val === currentSector[index])) {
-            setCurrentSector(newSector)
+        // Array comparison - only update ref if changed
+        if (newSector.length !== currentSectorRef.current.length || !newSector.every((val, index) => val === currentSectorRef.current[index])) {
+            currentSectorRef.current = newSector
+            applyFilters() // Trigger filtering without re-render
         }
     })
+
+    // Selection Highlighting
+    useEffect(() => {
+        const batcher = sceneGroup?.userData.batcher
+        if (!batcher) return
+
+        if (selectedElementId) {
+            // Highlight the selected element
+            batcher.highlight([selectedElementId])
+        } else {
+            // Clear highlighting
+            batcher.clearHighlight()
+        }
+    }, [selectedElementId, sceneGroup])
 
     // Apply filters to show/hide elements AND handle backface rendering
     // Memoize phase filtered IDs to avoid redundant calculations
@@ -195,105 +245,39 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             : null
     }, [phases.dataTree, phases.selectedPhase, phases.filterMode])
 
+    // Phase Coloring Logic
     useEffect(() => {
-        if (!sceneGroup) return
+        const batcher = sceneGroup?.userData.batcher
+        if (!batcher || !phases.dataTree || !phases.selectedPhase) return
 
-        // Skip expensive filtering during camera navigation for better performance
-        if (isInteracting) return
+        if (phases.filterMode === 'diff') {
+            const phaseData = phases.dataTree.elementsByPhase[phases.selectedPhase]
+            if (!phaseData) return
 
-        // Apply backface rendering if enabled
-        if (renderBackFaces) {
-            sceneGroup.traverse((child) => {
-                if (child instanceof THREE.Mesh) {
-                    const material = child.material as THREE.MeshStandardMaterial
-                    material.side = THREE.BackSide
-                    material.needsUpdate = true
+            const statusMap = new Map<string, 'created' | 'demolished' | 'existing'>()
+
+            // Map Created
+            phaseData.created.forEach(id => statusMap.set(id, 'created'))
+
+            // Map Demolished
+            phaseData.demolished.forEach(id => statusMap.set(id, 'demolished'))
+
+            // Map Existing (Active but not Created)
+            phaseData.active.forEach(id => {
+                if (!phaseData.created.has(id)) {
+                    statusMap.set(id, 'existing')
                 }
             })
+
+            batcher.applyPhaseColors(statusMap)
+        } else {
+            // For other modes, we clear phase colors (visibility handled separately)
+            batcher.clearPhaseColors()
         }
+    }, [phases.selectedPhase, phases.filterMode, phases.dataTree, sceneGroup])
 
-        const hasFilters = filters.categories.length > 0 || filters.levels.length > 0 || filters.groups.length > 0
-        const isDollhouse = viewMode === 'dollhouse' && currentSector.length > 0 && !selectedAssemblyId
 
-        // Use memoized phase filtered IDs
-        const hasPhaseFilter = phaseFilteredIds !== null
 
-        let visibleCount = 0
-        let hiddenCount = 0
-
-        sceneGroup.traverse((child) => {
-            // Check if this is a Group with element data (not a mesh)
-            if (child instanceof THREE.Group && child.userData.id && child.userData.properties) {
-                const element = child.userData
-
-                // Get element category, level, and group
-                const category = element.category || element.properties?.builtInCategory?.replace("OST_", "")
-                const level = element.level || element.properties?.Parameters?.["Instance Parameters"]?.Constraints?.["Base Constraint"]?.value
-                const groupName = element.properties?.groupName
-
-                const isHidden = element.properties?.isHidden // Check for explicit hidden state if we add that later
-
-                // DOLLHOUSE VISIBILITY CHECK
-                let isHiddenByDollhouse = false
-                if (isDollhouse && groupName) {
-                    // Check if group is hidden in ANY of the current sectors
-                    for (const sector of currentSector) {
-                        const hiddenGroups = DOLLHOUSE_CONFIG[sector]
-                        if (hiddenGroups.includes(groupName)) {
-                            isHiddenByDollhouse = true
-                            break
-                        }
-                    }
-                }
-
-                // Check if element matches category/level/group filters
-                let matchesCategory = filters.categories.length === 0 || filters.categories.includes(category)
-                let matchesLevel = filters.levels.length === 0 || filters.levels.includes(level)
-                let matchesGroup = filters.groups.length === 0 || filters.groups.includes(groupName)
-
-                // Check if element matches phase filter (always enforced if phase is selected)
-                let matchesPhase = !hasPhaseFilter || (phaseFilteredIds?.has(element.id) ?? true)
-
-                // Determine visibility
-                let isVisible = false
-
-                if (!enableFiltering) {
-                    // Filtering disabled: show everything (except dollhouse)
-                    isVisible = true
-                } else if (hasFilters) {
-                    // Category/level/group filters active: combine with phase filter (AND logic)
-                    isVisible = matchesCategory && matchesLevel && matchesGroup && matchesPhase
-                } else {
-                    // No category/level/group filters: just apply phase filter
-                    isVisible = matchesPhase
-                }
-
-                child.visible = isVisible && !isHiddenByDollhouse
-
-                // Disable/enable raycasting based on visibility
-                child.traverse((c) => {
-                    if (c instanceof THREE.Mesh) {
-                        if (child.visible) {
-                            c.raycast = THREE.Mesh.prototype.raycast
-                        } else {
-                            // Disable raycasting for invisible elements
-                            c.raycast = () => { }
-                        }
-                    }
-                })
-
-                if (child.visible) {
-                    visibleCount++
-                } else {
-                    hiddenCount++
-                }
-            }
-        })
-
-        console.log(`Filtering complete: ${visibleCount} visible, ${hiddenCount} hidden`)
-    }, [sceneGroup, filters, renderBackFaces, enableFiltering, viewMode, currentSector, selectedAssemblyId, phaseFilteredIds, isInteracting])
-
-    console.log("SpeckleModel Render. ViewMode:", viewMode, "Sector:", currentSector, "Phases:", phases)
 
     // Removed automatic camera fitting - rely on OrbitControls default behavior
     // The initial camera position from Canvas props is sufficient
@@ -315,227 +299,87 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         if (distance < 5) {
             e.stopPropagation()
 
-            // Debug logging
-            console.log("=== SELECTED MESH ===")
-            console.log("Mesh object:", e.object)
-            console.log("Mesh userData:", e.object.userData)
-            console.log("Full event:", e)
-
-            // We attached metadata to userData in the converter
-            const data = e.object.userData
-
-            // If we clicked a mesh, we want its PARENT (the Wall), not the mesh itself
-            const elementId = data.parentId || data.id
-
-            // Reconstruct the full element object from userData
-            const fullElement = data.fullElement || {
-                id: elementId,
-                speckle_type: data.speckleType,
-                properties: data.properties,
-                ...data
+            // Use BatchRaycaster for selection
+            const batcher = sceneGroup?.userData.batcher
+            if (!batcher) {
+                console.warn('Batcher not found in scene userData')
+                setPointerDown(null)
+                return
             }
 
-            console.log("Full element being passed to store:", fullElement)
+            // Get camera from component scope (from useThree hook)
+            const threeCamera = camera
 
-            // Check for groupName
-            const groupName = fullElement.properties?.groupName
-            const { selectedAssemblyId, setSelectedAssembly } = useAppStore.getState()
+            // Import and use the raycaster
+            import('@/lib/viewer/batch-raycaster').then(({ BatchRaycaster }) => {
+                const raycaster = new BatchRaycaster()
 
-            // LOGIC:
-            // 1. If we are already viewing this assembly, we can select individual elements within it.
-            // 2. If we are NOT viewing it (or clicked a different group), clicking a grouped element selects the ASSEMBLY first.
+                // Convert mouse position to normalized device coordinates
+                const pointer = new THREE.Vector2(
+                    (e.clientX / window.innerWidth) * 2 - 1,
+                    -(e.clientY / window.innerHeight) * 2 + 1
+                )
 
-            if (selectedAssemblyId === groupName) {
-                // We are already viewing this assembly -> Select the element
-                setSelectedElement(elementId, fullElement)
-            } else if (groupName) {
-                // We are NOT viewing this assembly -> Select the ASSEMBLY
-                console.log(`Element belongs to group: ${groupName}. Selecting Assembly.`)
+                const result = raycaster.intersect(threeCamera, pointer, batcher)
 
-                // 1. Clear existing filters
-                useAppStore.getState().clearFilters()
+                if (result) {
+                    const { batchObject } = result
+                    console.log('Selected element:', batchObject.elementId)
+                    console.log('Element properties:', batchObject.properties)
 
-                // 2. Set the group filter (Isolate)
-                useAppStore.getState().toggleGroupFilter(groupName)
+                    // Check for assembly/group logic
+                    const groupName = batchObject.properties?.groupName
+                    const { selectedAssemblyId, setSelectedAssembly } = useAppStore.getState()
 
-                // 3. Set Assembly Selection
-                setSelectedAssembly(groupName)
-                setSelectedElement(null) // Clear element selection to show assembly view
-            } else {
-                // No group -> Standard Element Selection
-                setSelectedElement(elementId, fullElement)
-                setSelectedAssembly(null)
-            }
+                    if (selectionMode === 'elements') {
+                        // Elements mode: always select the individual element
+                        setSelectedElement(batchObject.elementId, {
+                            id: batchObject.elementId,
+                            speckle_type: batchObject.speckleType,
+                            properties: batchObject.properties,
+                            ...batchObject.properties
+                        })
+                        setSelectedAssembly(null)
+                    } else if (selectedAssemblyId === groupName) {
+                        // Assembly mode: already viewing this assembly -> select the element
+                        setSelectedElement(batchObject.elementId, {
+                            id: batchObject.elementId,
+                            speckle_type: batchObject.speckleType,
+                            properties: batchObject.properties,
+                            ...batchObject.properties
+                        })
+                    } else if (groupName) {
+                        // Assembly mode: not viewing this assembly -> select the assembly
+                        console.log(`Element belongs to group: ${groupName}. Selecting Assembly.`)
+                        useAppStore.getState().clearFilters()
+                        useAppStore.getState().toggleGroupFilter(groupName)
+                        setSelectedAssembly(groupName)
+                        setSelectedElement(null, undefined)
+                    } else {
+                        // No group -> standard element selection
+                        setSelectedElement(batchObject.elementId, {
+                            id: batchObject.elementId,
+                            speckle_type: batchObject.speckleType,
+                            properties: batchObject.properties,
+                            ...batchObject.properties
+                        })
+                        setSelectedAssembly(null)
+                    }
+                } else {
+                    // Clicked on empty space or hidden element - deselect
+                    setSelectedElement(null, undefined)
+                    const { selectedAssemblyId } = useAppStore.getState()
+                    if (selectedAssemblyId) {
+                        // Clear the group filter that was applied during assembly selection
+                        useAppStore.getState().clearFilters()
+                    }
+                    useAppStore.getState().setSelectedAssembly(null)
+                }
+            })
         }
 
         setPointerDown(null)
     }
-
-
-    // Selection Highlight Logic & Raycasting Control
-    // Re-color meshes based on selection and disable raycasting if selection is disabled
-    useEffect(() => {
-        if (!sceneGroup) return
-        sceneGroup.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                // Raycasting control: make mesh "transparent" to clicks if selection is disabled OR if parent is hidden
-                // This allows clicks to pass through to the canvas onPointerMissed event
-                // And prevents hidden/filtered elements from blocking clicks on visible ones
-                const isParentVisible = child.parent ? child.parent.visible : true
-
-                if (enableSelection && isParentVisible) {
-                    child.raycast = THREE.Mesh.prototype.raycast
-                } else {
-                    child.raycast = () => { }
-                }
-
-                // Only highlight if selection is enabled AND it matches the selected ID
-                const isSelected = enableSelection && child.userData.parentId === selectedElementId
-
-                // Determine phase color coding based on filter mode
-                let phaseColor: string | null = null
-                if (phases.colorCodingEnabled && phases.dataTree && phases.selectedPhase && child.userData.parentId) {
-                    const phaseData = phases.dataTree.elementsByPhase[phases.selectedPhase]
-                    if (phaseData) {
-                        const elementId = child.userData.parentId
-
-                        // Color code based on filter mode
-                        if (phases.filterMode === 'new') {
-                            // New mode: only color new elements
-                            if (phaseData.created.has(elementId)) {
-                                phaseColor = '#22c55e' // Green for new elements
-                            }
-                        } else if (phases.filterMode === 'demolished') {
-                            // Demolished mode: only color demolished elements
-                            if (phaseData.demolished.has(elementId)) {
-                                phaseColor = '#ef4444' // Red for demolished elements
-                            }
-                        } else if (phases.filterMode === 'diff') {
-                            // Diff mode: color both new and demolished
-                            if (phaseData.created.has(elementId)) {
-                                phaseColor = '#22c55e' // Green for new elements
-                            } else if (phaseData.demolished.has(elementId)) {
-                                phaseColor = '#ef4444' // Red for demolished elements
-                            }
-                        }
-                        // Complete mode: no color coding
-                    }
-                }
-
-                // Handle Material Swapping for Technical Mode
-                if (renderMode === 'technical') {
-                    // 1. Save original material if not saved
-                    if (!child.userData.originalMaterial) {
-                        child.userData.originalMaterial = child.material
-                    }
-
-                    // 2. Assign White Basic Material (Unlit)
-                    if (!(child.material instanceof THREE.MeshBasicMaterial)) {
-                        child.material = new THREE.MeshBasicMaterial({
-                            color: 0xffffff,
-                            side: THREE.DoubleSide,
-                            toneMapped: false
-                        })
-                    }
-
-                    const basicMat = child.material as THREE.MeshBasicMaterial
-
-                    // Set color and opacity
-                    if (isSelected) {
-                        basicMat.color.set('#3b82f6');
-                        basicMat.transparent = false;
-                        basicMat.opacity = 1.0;
-                        basicMat.depthWrite = true;
-                    } else if (phaseColor) {
-                        basicMat.color.set(phaseColor);
-                        basicMat.transparent = false;
-                        basicMat.opacity = 1.0;
-                        basicMat.depthWrite = true;
-                    } else {
-                        basicMat.color.set(0xffffff);
-                        // Make transparent if color coding is active
-                        if (phases.colorCodingEnabled && phases.filterMode !== 'complete') {
-                            basicMat.transparent = true;
-                            basicMat.opacity = 0.1;
-                            basicMat.depthWrite = false;
-                        } else {
-                            basicMat.transparent = false;
-                            basicMat.opacity = 1.0;
-                            basicMat.depthWrite = true;
-                        }
-                    }
-                    basicMat.toneMapped = false;
-
-                    // Handle Edges
-                    const edgeName = '__technical_edge'
-                    let edgeLine = child.children.find(c => c.name === edgeName)
-
-                    if (!edgeLine) {
-                        const edgesGeometry = new THREE.EdgesGeometry(child.geometry, 15)
-                        const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
-                        edgeLine = new THREE.LineSegments(edgesGeometry, edgeMaterial)
-                        edgeLine.name = edgeName
-                        child.add(edgeLine)
-                    }
-                    edgeLine.visible = true
-
-                } else {
-                    // Restore Original Material if needed
-                    if (child.userData.originalMaterial && child.material instanceof THREE.MeshBasicMaterial) {
-                        child.material = child.userData.originalMaterial
-                    }
-
-                    // Now we are back to Standard Material
-                    const material = child.material as THREE.MeshStandardMaterial
-
-                    if (isSelected) {
-                        material.color.set('#3b82f6')
-                        material.transparent = false
-                        material.opacity = 1.0
-                        material.depthWrite = true
-                    } else if (phaseColor) {
-                        // Apply phase color coding
-                        material.color.set(phaseColor)
-                        material.transparent = false
-                        material.opacity = 1.0
-                        material.depthWrite = true
-                    } else {
-                        if (renderMode === 'rendered') {
-                            material.color.set('#f0f0f0')
-                            material.emissive.set('#000000')
-                            material.emissiveIntensity = 0.0
-                            material.roughness = 1.0
-                            material.metalness = 0.0
-                        } else {
-                            material.color.set('#e2e8f0')
-                            material.emissive.set('#000000')
-                            material.emissiveIntensity = 0.0
-                            material.roughness = 1.0
-                            material.metalness = 0.0
-                        }
-                        // Make transparent if color coding is active
-                        if (phases.colorCodingEnabled && phases.filterMode !== 'complete') {
-                            material.transparent = true
-                            material.opacity = 0.1
-                            material.depthWrite = false
-                        } else {
-                            material.transparent = false
-                            material.opacity = 1.0
-                            material.depthWrite = true
-                        }
-                    }
-                    material.needsUpdate = true
-
-                    // Hide edges
-                    const edgeName = '__technical_edge'
-                    const edgeLine = child.children.find(c => c.name === edgeName)
-                    if (edgeLine) {
-                        edgeLine.visible = false
-                    }
-                }
-            }
-        })
-    }, [selectedElementId, sceneGroup, enableSelection, renderMode, phases])
 
     if (!sceneGroup) return null
 

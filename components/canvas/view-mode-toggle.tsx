@@ -3,27 +3,34 @@
 import { useAppStore } from "@/lib/store"
 import { useShallow } from "zustand/react/shallow"
 import { cn } from "@/lib/utils"
-import { Box, Layers, Palette } from "lucide-react"
+import { Box, Layers, Palette, MousePointerClick } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 
 export function ViewModeToggle() {
-    const { viewMode, setViewMode, renderMode, setRenderMode } = useAppStore(
+    const { viewMode, setViewMode, renderMode, setRenderMode, selectionMode, setSelectionMode } = useAppStore(
         useShallow((state) => ({
             viewMode: state.viewMode,
             setViewMode: state.setViewMode,
             renderMode: state.renderMode,
             setRenderMode: state.setRenderMode,
+            selectionMode: state.selectionMode,
+            setSelectionMode: state.setSelectionMode,
         }))
     )
 
     const [isRenderMenuOpen, setIsRenderMenuOpen] = useState(false)
-    const menuRef = useRef<HTMLDivElement>(null)
+    const [isSelectionMenuOpen, setIsSelectionMenuOpen] = useState(false)
+    const renderMenuRef = useRef<HTMLDivElement>(null)
+    const selectionMenuRef = useRef<HTMLDivElement>(null)
 
-    // Close menu when clicking outside
+    // Close menus when clicking outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            if (renderMenuRef.current && !renderMenuRef.current.contains(event.target as Node)) {
                 setIsRenderMenuOpen(false)
+            }
+            if (selectionMenuRef.current && !selectionMenuRef.current.contains(event.target as Node)) {
+                setIsSelectionMenuOpen(false)
             }
         }
         document.addEventListener("mousedown", handleClickOutside)
@@ -33,8 +40,46 @@ export function ViewModeToggle() {
     return (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-row gap-3 items-center">
 
+            {/* Selection Mode Dropdown */}
+            <div className="relative" ref={selectionMenuRef}>
+                {isSelectionMenuOpen && (
+                    <div className="absolute bottom-full left-0 mb-2 w-40 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg overflow-hidden flex flex-col p-1 animate-in fade-in zoom-in-95 duration-100">
+                        <button
+                            onClick={() => { setSelectionMode('assembly'); setIsSelectionMenuOpen(false) }}
+                            className={cn(
+                                "flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors text-left",
+                                selectionMode === 'assembly' ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"
+                            )}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm" />
+                            Assembly
+                        </button>
+                        <button
+                            onClick={() => { setSelectionMode('elements'); setIsSelectionMenuOpen(false) }}
+                            className={cn(
+                                "flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors text-left",
+                                selectionMode === 'elements' ? "bg-primary/10 text-primary" : "hover:bg-muted text-muted-foreground"
+                            )}
+                        >
+                            <span className="w-2 h-2 rounded-full bg-green-500 shadow-sm" />
+                            Elements
+                        </button>
+                    </div>
+                )}
+                <button
+                    onClick={() => setIsSelectionMenuOpen(!isSelectionMenuOpen)}
+                    className={cn(
+                        "bg-background/80 backdrop-blur-sm border border-border rounded-full w-9 h-9 flex items-center justify-center shadow-sm transition-colors",
+                        isSelectionMenuOpen ? "bg-muted text-foreground" : "hover:bg-muted text-muted-foreground"
+                    )}
+                    title="Selection Mode"
+                >
+                    <MousePointerClick className="w-4 h-4" />
+                </button>
+            </div>
+
             {/* Render Mode Dropdown */}
-            <div className="relative" ref={menuRef}>
+            <div className="relative" ref={renderMenuRef}>
                 {isRenderMenuOpen && (
                     <div className="absolute bottom-full left-0 mb-2 w-32 bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg overflow-hidden flex flex-col p-1 animate-in fade-in zoom-in-95 duration-100">
                         <button
@@ -108,6 +153,7 @@ export function ViewModeToggle() {
                     Dollhouse
                 </button>
             </div>
+
         </div>
     )
 }
