@@ -2,7 +2,7 @@
 
 import React, { useState, memo } from 'react';
 import { Factory, DollarSign, MapPin, Leaf, Info, ShieldCheck, AlertTriangle, Truck, Recycle, Undo2, LucideIcon, Tractor } from 'lucide-react';
-import { MaterialPassport } from '@/types/material-passport';
+import { EnrichedMaterialPassport } from '@/types/material-passport';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +33,7 @@ const DataPoint = memo(({ label, value, sub, highlight = false }: { label: strin
 ));
 DataPoint.displayName = 'DataPoint';
 
-export const MaterialCardCompact = memo(({ material }: { material: MaterialPassport }) => {
+export const MaterialCardCompact = memo(({ material }: { material: EnrichedMaterialPassport }) => {
     const [isFlipped, setIsFlipped] = useState(false);
 
     const netCarbon = (material.matrixMetrics.embodiedCarbon.totalEmbodied + material.matrixMetrics.embodiedCarbon.biogenicStorage).toFixed(2);
@@ -42,8 +42,21 @@ export const MaterialCardCompact = memo(({ material }: { material: MaterialPassp
     // Determine Icon based on transport mode (matching Thumbnail logic)
     const ProvenanceIcon = material.matrixMetrics.provenance.transportMode === 'EV_Van' ? Truck : Tractor;
 
+    const manufacturer = 'manufacturer' in material ? material.manufacturer : 'Existing Stock';
+    const cost = 'unitRate' in material.matrixMetrics.financialCost
+        ? material.matrixMetrics.financialCost.unitRate
+        : material.matrixMetrics.financialCost.repairCost;
+
     return (
-        <div className="relative h-96 bg-white border border-gray-200 perspective-1000 group hover:border-black/30 transition-colors duration-300">
+        <div className={cn(
+            "relative h-96 bg-white border border-gray-200 perspective-1000 group hover:border-black/30 transition-colors duration-300",
+            material.isUsed && "ring-2 ring-green-500/50 border-green-500/50"
+        )}>
+            {material.isUsed && (
+                <div className="absolute -top-2 -right-2 z-20 bg-green-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    USED: {material.volume.toFixed(2)}m³
+                </div>
+            )}
             <div
                 className="relative w-full h-full transition-transform duration-500 ease-out"
                 style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
@@ -66,7 +79,7 @@ export const MaterialCardCompact = memo(({ material }: { material: MaterialPassp
                             </span>
                         </div>
                         <span className="text-[10px] text-black/60 uppercase tracking-wider truncate mt-1">
-                            {material.manufacturer}
+                            {manufacturer}
                         </span>
                     </div>
 
@@ -106,11 +119,12 @@ export const MaterialCardCompact = memo(({ material }: { material: MaterialPassp
 
                         {/* Metrics Column */}
                         <div className="flex flex-col justify-end pb-0.5 space-y-1">
-                            <CompactMetric icon={DollarSign} value={material.matrixMetrics.financialCost.unitRate > 0 ? `${material.matrixMetrics.financialCost.unitRate}` : '-'} unit=" GBP" />
+                            <CompactMetric icon={DollarSign} value={cost > 0 ? `${cost}` : '-'} unit=" GBP" />
                             <CompactMetric icon={MapPin} value={material.matrixMetrics.provenance.distanceToSiteMiles} unit=" mi" />
                             <CompactMetric icon={Leaf} value={netCarbon} unit=" kgCO₂e" />
                         </div>
                     </div>
+
 
                     {/* Flip Trigger */}
                     <button

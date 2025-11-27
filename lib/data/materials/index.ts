@@ -4,8 +4,10 @@ import { liningMaterials } from './material-cultures/lining';
 import { flooringMaterials } from './material-cultures/flooring';
 import { sheathingMaterials } from './material-cultures/sheathing';
 import { finishesMaterials } from './material-cultures/finishes';
+import { existingMaterials } from './existing/existing';
 
-import { MaterialPassport } from '@/types/material-passport';
+
+import { MaterialPassport, ExistingMaterialPassport } from '@/types/material-passport';
 
 /**
  * All materials from material cultures combined
@@ -16,8 +18,15 @@ export const allMaterials: MaterialPassport[] = [
     ...liningMaterials,
     ...flooringMaterials,
     ...sheathingMaterials,
+
     ...finishesMaterials,
 ];
 
+
+
+export const combinedMaterials = [...allMaterials, ...existingMaterials];
+
+
 // Re-export individual collections for specific use cases
-export { structuralMaterials, insulationMaterials, liningMaterials, flooringMaterials };
+export { structuralMaterials, insulationMaterials, liningMaterials, flooringMaterials, existingMaterials };
+

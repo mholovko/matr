@@ -6,7 +6,10 @@ export type SortOption =
     | 'CARBON_DESC'
     | 'PRICE_ASC'
     | 'PRICE_DESC'
-    | 'DISTANCE_ASC';
+    | 'DISTANCE_ASC'
+    | 'VOLUME_DESC'
+    | 'VOLUME_ASC';
+
 
 export type DisplayMode = 'card' | 'thumbnail'; // NEW
 
@@ -16,4 +19,6 @@ export interface MaterialFilterState {
     health: 'ALL' | 'Red_List_Free' | 'Contains_VOCs';
     sort: SortOption;
     mode: DisplayMode; // NEW
+    origin: 'ALL' | 'NEW' | 'EXISTING';
+    usage: 'ALL' | 'USED';
 }

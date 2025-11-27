@@ -1,6 +1,6 @@
 'use client'
 
-import { MaterialPassport } from '@/types/material-passport'
+import { EnrichedMaterialPassport } from '@/types/material-passport'
 import { MaterialCardCompact } from './material-card'
 import { MaterialThumbnail } from './material-thumbnail'
 import { memo } from 'react'
@@ -8,7 +8,7 @@ import { SortOption, DisplayMode } from '@/types/materials-filters'
 import { cn } from '@/lib/utils'
 
 interface MaterialsGridProps {
-    materials: MaterialPassport[]
+    materials: EnrichedMaterialPassport[]
     mode: DisplayMode
     sortBy: SortOption
     isPanelCollapsed: boolean

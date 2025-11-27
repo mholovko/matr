@@ -149,6 +149,7 @@ export function MaterialsDashboard({ filters, onFilterChange, totalCount, isColl
                                 { id: 'PRICE_ASC', label: 'Lowest Price', icon: DollarSign },
                                 { id: 'DISTANCE_ASC', label: 'Nearest Origin', icon: MapPin },
                                 { id: 'PRICE_DESC', label: 'Highest Price', icon: ArrowUpDown },
+                                { id: 'VOLUME_DESC', label: 'Highest Volume', icon: CheckCircle2 },
                             ].map((option) => (
                                 <button
                                     key={option.id}
@@ -166,6 +167,49 @@ export function MaterialsDashboard({ filters, onFilterChange, totalCount, isColl
                             ))}
                         </div>
                     </section>
+
+                    {/* Status / Origin */}
+                    <section>
+                        <h3 className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Status</h3>
+                        <div className="flex p-0.5 bg-muted rounded-md">
+                            {[
+                                { id: 'ALL', label: 'All' },
+                                { id: 'NEW', label: 'New' },
+                                { id: 'EXISTING', label: 'Existing' }
+                            ].map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => onFilterChange({ origin: opt.id as any })}
+                                    className={cn(
+                                        "flex-1 py-1.5 px-2 text-[10px] font-medium rounded-sm transition-all",
+                                        filters.origin === opt.id
+                                            ? "bg-background text-foreground shadow-sm ring-1 ring-border"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                                    )}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Usage */}
+                    <section>
+                        <h3 className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Usage</h3>
+                        <button
+                            onClick={() => onFilterChange({ usage: filters.usage === 'USED' ? 'ALL' : 'USED' })}
+                            className={cn(
+                                "w-full flex items-center gap-3 px-3 py-3 text-xs border rounded-md transition-all",
+                                filters.usage === 'USED'
+                                    ? "bg-blue-500/5 border-blue-500/20 text-blue-700"
+                                    : "bg-background border-border text-muted-foreground hover:border-foreground/30"
+                            )}
+                        >
+                            <CheckCircle2 size={14} className={filters.usage === 'USED' ? "text-blue-600" : "text-muted-foreground"} />
+                            <span className="font-medium">Used in Project Only</span>
+                        </button>
+                    </section>
+
 
                     {/* Classification */}
                     <section>
@@ -224,9 +268,10 @@ export function MaterialsDashboard({ filters, onFilterChange, totalCount, isColl
 
                     {/* Reset Button */}
                     <button
-                        onClick={() => onFilterChange({ search: '', classification: 'ALL', health: 'ALL', sort: 'CARBON_ASC', mode: 'card' })}
+                        onClick={() => onFilterChange({ search: '', classification: 'ALL', health: 'ALL', sort: 'CARBON_ASC', mode: 'card', origin: 'ALL', usage: 'ALL' })}
                         className="w-full py-2.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground border border-transparent hover:border-border rounded-md transition-all"
                     >
+
                         Reset Filters
                     </button>
 

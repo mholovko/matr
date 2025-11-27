@@ -1,10 +1,11 @@
 'use client';
 
 import React, { memo } from 'react';
-import { MaterialPassport, Classification } from '@/types/material-passport';
-import { Factory, Leaf, DollarSign, MapPin, Tractor, Truck } from 'lucide-react';
+import { EnrichedMaterialPassport, Classification } from '@/types/material-passport';
+import { Factory, Leaf, DollarSign, MapPin, Tractor, Truck, Box } from 'lucide-react';
 import { SortOption } from '@/types/materials-filters';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 const CLASSIFICATION_COLORS: Record<string, string> = {
     [Classification.STRUCTURAL_TIMBER]: "#C9E2CE", // Muted Green
@@ -18,7 +19,7 @@ const CLASSIFICATION_COLORS: Record<string, string> = {
 const DEFAULT_COLOR = "#F3F2EA";
 
 interface ThumbnailProps {
-    material: MaterialPassport;
+    material: EnrichedMaterialPassport;
     sortBy: SortOption;
 }
 
@@ -26,11 +27,16 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
 
     const getPrimaryMetric = () => {
         if (sortBy.includes('PRICE')) {
-            const price = material.matrixMetrics.financialCost.unitRate;
+            const price = 'unitRate' in material.matrixMetrics.financialCost
+                ? material.matrixMetrics.financialCost.unitRate
+                : material.matrixMetrics.financialCost.repairCost;
             return { icon: DollarSign, value: price > 0 ? price.toFixed(2) : '-', unit: '', prefix: '£' };
         }
         if (sortBy.includes('DISTANCE')) {
             return { icon: MapPin, value: material.matrixMetrics.provenance.distanceToSiteMiles, unit: 'mi', prefix: '' };
+        }
+        if (sortBy.includes('VOLUME')) {
+            return { icon: Box, value: material.volume.toFixed(2), unit: ' m³', prefix: '' };
         }
         const netCarbon = (material.matrixMetrics.embodiedCarbon.totalEmbodied + material.matrixMetrics.embodiedCarbon.biogenicStorage).toFixed(2);
         return { icon: Leaf, value: netCarbon, unit: ' kgCO₂e', prefix: '' };
@@ -42,8 +48,15 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
     // Dynamic Background Color
     const bgColor = CLASSIFICATION_COLORS[material.classification] || DEFAULT_COLOR;
 
+    const manufacturer = 'manufacturer' in material ? material.manufacturer : 'Existing Stock';
+
     return (
-        <div className="flex flex-col h-full group cursor-pointer select-none">
+        <div className="flex flex-col h-full group cursor-pointer select-none relative">
+            {material.isUsed && (
+                <div className="absolute top-0 right-0 z-20 bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                    USED
+                </div>
+            )}
 
             {/* Text Block */}
             <div className="flex flex-col min-w-0 mb-4">
@@ -52,7 +65,7 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
                         {material.name}
                     </span>
                     <span className="text-[10px] text-black/60 uppercase tracking-wider truncate mt-0.5">
-                        {material.manufacturer}
+                        {manufacturer}
                     </span>
                 </div>
                 <div className="w-full border-b border-black mb-1" />
@@ -69,9 +82,9 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
                 style={{ backgroundColor: bgColor }}
             >
                 {/* Icon */}
-                <div className="absolute top-2 left-2 text-black/80 z-10">
+                {/* <div className="absolute top-2 left-2 text-black/80 z-10">
                     <ProvenanceIcon size={12} />
-                </div>
+                </div> */}
 
                 {material.image ? (
                     <Image

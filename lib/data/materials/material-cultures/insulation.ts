@@ -11,7 +11,7 @@ export const insulationMaterials: MaterialPassport[] = [
 
   {
     id: uuidv4(),
-    name: "Sisalwool Batt",
+    name: "HBA_Insulation - Expanded Polystyrene (EPS)",
     manufacturer: "Sisaltech",
     description: "Pre-cut batts made from compressed sisal fibres mixed with wool. Suitable for use between rafters, joists, stud walls and in loft spaces, it is renewable and biodegradable and provides excellent thermal and acoustic insulation as well as vapour permeability.",
     classification: Classification.INSULATION,
