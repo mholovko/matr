@@ -104,8 +104,8 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
 
                         // 2. If no Element is selected, deselect Assembly/Material and clear filters (Back to Inventory)
                         state.setSelectedAssembly(null)
-                        state.setSelectedMaterial(null)
-                        state.clearFilters()
+                        state.clearAllFilters()
+                        state.clearHighlights()
 
                         // Also deselect retrofit scope when clicking outside on Retrofit page
                         if (pathname === '/retrofit') {

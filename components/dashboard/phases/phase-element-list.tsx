@@ -1,475 +1,545 @@
 'use client'
 
+import React, { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react' // Added useRef
 import { useAppStore } from '@/lib/store'
-import { useState, useMemo, memo, useCallback, useEffect } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { cn } from '@/lib/utils'
 import {
-  Search,
-  ChevronRight,
-  ChevronDown,
-  Package,
-  // Architecture Icons
-  BrickWall, DoorOpen, Layers, Triangle, Armchair, Box, Columns,
+  Search, ChevronRight, Package, Box, Check, Filter,
+  BrickWall, DoorOpen, Layers, Triangle, Armchair, Columns,
   Cable, Lightbulb, Fan, Droplet, Mountain, Component, Footprints, Fence,
-  Square, RectangleVertical, Briefcase, PenTool, Ruler, Zap, Flower2, Car,
+  Square, RectangleVertical, Briefcase, PenTool, Ruler, Zap, Flower2,
   Grid3x3, Grid2x2, LucideIcon
 } from 'lucide-react'
 
-// --- 1. Icon Mapping Utility ---
-const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+// --- 0. Local Fallback Component ---
+const EmptyFilterState = () => (
+  <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+    <div className="bg-muted/50 p-3 rounded-full mb-3">
+      <Filter className="h-5 w-5 text-muted-foreground/50" />
+    </div>
+    <p className="text-xs font-medium text-foreground">No elements found</p>
+    <p className="text-[10px] text-muted-foreground mt-1 max-w-[180px]">
+      Try adjusting your material filters or search terms.
+    </p>
+  </div>
+)
+
+// --- 1. Constants & Icons ---
+const ICON_MAP: Record<string, LucideIcon> = {
   'Walls': BrickWall, 'Curtain Walls': Grid3x3, 'Doors': DoorOpen, 'Windows': Grid2x2,
   'Floors': Layers, 'Roofs': Triangle, 'Ceilings': Layers, 'Stairs': Footprints,
   'Railings': Fence, 'Ramps': Triangle, 'Columns': Columns, 'Furniture': Armchair,
   'Furniture Systems': Armchair, 'Casework': Briefcase, 'Specialty Equipment': Component,
   'Structural Columns': RectangleVertical, 'Structural Framing': Component,
-  'Structural Foundations': Box, 'Ducts': Fan, 'Duct Fittings': Fan,
-  'Mechanical Equipment': Fan, 'Pipes': Cable, 'Pipe Fittings': Cable,
-  'Plumbing Fixtures': Droplet, 'Sprinklers': Droplet, 'Electrical Fixtures': Zap,
-  'Lighting Fixtures': Lightbulb, 'Conduits': Cable, 'Topography': Mountain,
-  'Site': Mountain, 'Planting': Flower2, 'Parking': Car, 'Generic Models': Box,
-  'Mass': Box, 'Rooms': Square, 'Areas': Square, 'Text Notes': PenTool, 'Dimensions': Ruler,
+  'Structural Foundations': Box, 'Ducts': Fan, 'Mechanical Equipment': Fan,
+  'Pipes': Cable, 'Plumbing Fixtures': Droplet, 'Electrical Fixtures': Zap,
+  'Lighting Fixtures': Lightbulb, 'Topography': Mountain, 'Planting': Flower2,
+  'Rooms': Square, 'Areas': Square, 'Text Notes': PenTool, 'Dimensions': Ruler,
 }
 
-const DefaultIcon = Box
-
-function getCategoryIcon(category: string | undefined): LucideIcon {
-  if (!category) return DefaultIcon
-  if (CATEGORY_ICON_MAP[category]) return CATEGORY_ICON_MAP[category]
-  const normalizedKey = Object.keys(CATEGORY_ICON_MAP).find(key => category.includes(key))
-  return normalizedKey ? CATEGORY_ICON_MAP[normalizedKey] : DefaultIcon
-}
+const getIcon = (category: string) => ICON_MAP[category] || Object.values(ICON_MAP).find((_, i) => category.includes(Object.keys(ICON_MAP)[i])) || Box
 
 // --- 2. Types ---
+type ElementStatus = 'created' | 'demolished' | 'existing'
 
-type CategoryItem = {
-  type: 'category'
-  category: string
-  count: number
+interface TreeStats {
   added: number
   removed: number
-  elementIds: string[]
-  id: string
 }
 
-type GroupItem = {
-  type: 'group'
-  name: string
-  count: number
-  added: number
-  removed: number
-  elementIds: string[]
+interface VirtualItem {
   id: string
+  type: 'category' | 'group' | 'element'
+  label: string
+  count?: number
+  stats?: TreeStats
+  depth: number
+  data?: any
+  isExpanded?: boolean
+  isSelected?: boolean
+  isDimmed?: boolean
 }
 
-type ElementItem = {
-  type: 'element'
-  element: any
-  id: string
+// --- 3. Custom Hook: Data Processing ---
+const useElementTree = () => {
+  const {
+    modelElements, selectedElementIds, filters, phases, searchTerm,
+    getFilteredElementIds
+  } = useAppStore(useShallow(state => ({
+    modelElements: state.modelElements,
+    selectedElementIds: state.selectedElementIds,
+    filters: state.filters,
+    phases: state.phases,
+    searchTerm: state.searchTerm,
+    getFilteredElementIds: state.getFilteredElementIds,
+  })))
+
+  const activeIds = useMemo(() => {
+    const filtered = getFilteredElementIds({ skipSelectionFilters: true })
+    if (filtered) return filtered
+    return new Set(modelElements.map(e => e.id).filter(Boolean) as string[])
+  }, [
+    getFilteredElementIds,
+    modelElements,
+    phases.selectedPhase,
+    phases.filterMode,
+    searchTerm,
+    filters.materials,
+  ])
+
+  const hierarchy = useMemo(() => {
+    const structure = new Map<string, Map<string, any[]>>()
+    const catStats = new Map<string, TreeStats>()
+    const grpStats = new Map<string, TreeStats>()
+
+    const getStatus = (id: string): ElementStatus => {
+      if (!phases.dataTree || !phases.selectedPhase) return 'existing'
+      const p = phases.dataTree.elementsByPhase[phases.selectedPhase]
+      if (p?.created.has(id)) return 'created'
+      if (p?.demolished.has(id)) return 'demolished'
+      return 'existing'
+    }
+
+    modelElements.forEach(el => {
+      if (!el.id || !activeIds.has(el.id)) return
+
+      const category = el.category || "Uncategorized"
+      const name = el.name || "Unnamed"
+      const status = getStatus(el.id)
+
+      if (['Lines', '<Room Separation>', 'Toposolid'].includes(category)) return
+
+      if (!structure.has(category)) structure.set(category, new Map())
+      const groupMap = structure.get(category)!
+      if (!groupMap.has(name)) groupMap.set(name, [])
+      groupMap.get(name)!.push({ ...el, __status: status })
+
+      const isAdd = status === 'created' ? 1 : 0
+      const isRem = status === 'demolished' ? 1 : 0
+
+      const cStat = catStats.get(category) || { added: 0, removed: 0 }
+      catStats.set(category, { added: cStat.added + isAdd, removed: cStat.removed + isRem })
+
+      const gKey = `${category}::${name}`
+      const gStat = grpStats.get(gKey) || { added: 0, removed: 0 }
+      grpStats.set(gKey, { added: gStat.added + isAdd, removed: gStat.removed + isRem })
+    })
+
+    return { structure, catStats, grpStats }
+  }, [modelElements, activeIds, phases.dataTree, phases.selectedPhase])
+
+  return { hierarchy, activeIds }
 }
 
-type VirtualItem = CategoryItem | GroupItem | ElementItem
-
-// --- 3. Sub-Components ---
-
-// Helper for Diff Stats
-const DiffStats = ({ added, removed }: { added: number, removed: number }) => {
-  if (added === 0 && removed === 0) return null
+// --- 4. Sub-Components ---
+const DiffBadge = memo(({ stats }: { stats?: TreeStats }) => {
+  if (!stats || (stats.added === 0 && stats.removed === 0)) return null
   return (
-    <div className="flex items-center gap-1.5 text-[9px] font-mono font-medium leading-none">
-      {added > 0 && (
-        <span className="text-green-600 bg-green-500/10 px-1 py-0.5 rounded">+{added}</span>
-      )}
-      {removed > 0 && (
-        <span className="text-red-600 bg-red-500/10 px-1 py-0.5 rounded">-{removed}</span>
-      )}
-    </div>
-  )
-}
-
-// LEVEL 1: Category Header
-const CategoryHeaderItem = memo(({
-  category, count, added, removed, isExpanded, onClick, onMouseEnter, onMouseLeave, style
-}: {
-  category: string, count: number, added: number, removed: number, isExpanded: boolean,
-  onClick: () => void, onMouseEnter: () => void, onMouseLeave: () => void,
-  style: React.CSSProperties
-}) => {
-  const Icon = getCategoryIcon(category)
-  return (
-    <div style={style} className="w-full px-2 z-20">
-      <button
-        onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
-        className={cn(
-          "w-full h-full flex items-center gap-2 px-2 rounded-md transition-colors select-none group",
-          "hover:bg-muted bg-background/80 border border-transparent"
-        )}
-      >
-        <div className="shrink-0 text-muted-foreground transition-colors group-hover:text-foreground">
-          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </div>
-        <Icon size={13} className="text-foreground transition-colors" />
-
-        <span className="flex-1 text-left font-bold text-[11px] uppercase tracking-wider text-foreground truncate">
-          {category || "Uncategorized"}
-        </span>
-
-        <div className="flex items-center gap-2">
-          <DiffStats added={added} removed={removed} />
-          <span className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-            {count}
-          </span>
-        </div>
-      </button>
+    <div className="flex items-center gap-1 text-[9px] font-mono font-medium">
+      {stats.added > 0 && <span className="text-green-600 bg-green-500/10 px-1 rounded">+{stats.added}</span>}
+      {stats.removed > 0 && <span className="text-red-600 bg-red-500/10 px-1 rounded">-{stats.removed}</span>}
     </div>
   )
 })
-CategoryHeaderItem.displayName = 'CategoryHeaderItem'
+DiffBadge.displayName = 'DiffBadge'
 
-// LEVEL 2: Group Header (Name)
-const GroupHeaderItem = memo(({
-  name, count, added, removed, isExpanded, onClick, onMouseEnter, onMouseLeave, style
-}: {
-  name: string, count: number, added: number, removed: number, isExpanded: boolean,
-  onClick: () => void, onMouseEnter: () => void, onMouseLeave: () => void,
-  style: React.CSSProperties
-}) => {
+const CategoryRow = memo(({ item, onSelect, onExpand, onHover, style }: any) => {
+  const Icon = getIcon(item.label)
   return (
-    <div style={style} className="w-full px-2 z-10">
+    <div style={style} className="px-2 w-full flex items-center group/row">
       <button
-        onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
-        className={cn(
-          "w-[calc(100%-12px)] ml-3 h-full flex items-center gap-2 px-2 rounded-md transition-colors select-none group relative",
-          "hover:bg-muted bg-muted/30 border border-transparent hover:border-border/50",
-          // Vertical Line
-          "before:absolute before:-left-3 before:top-0 before:bottom-0 before:w-px before:bg-border/40"
-        )}
+        onClick={(e) => { e.stopPropagation(); onExpand() }}
+        className="h-[30px] w-[24px] flex items-center justify-center hover:bg-muted/50 rounded-l-md transition-colors text-muted-foreground hover:text-foreground"
       >
-        <div className="shrink-0 text-muted-foreground transition-colors group-hover:text-foreground">
-          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </div>
-        <Package size={12} className="text-muted-foreground/70 group-hover:text-primary/70 transition-colors" />
-
-        <span className="flex-1 text-left font-mono text-[11px] font-medium text-muted-foreground group-hover:text-foreground truncate transition-colors">
-          {name || "Unnamed Group"}
-        </span>
-
-        <div className="flex items-center gap-2">
-          <DiffStats added={added} removed={removed} />
-          <span className="text-[9px] font-mono text-muted-foreground/60">
-            {count}
-          </span>
+        <div className={cn("transition-transform duration-200", item.isExpanded && "rotate-90")}>
+          <ChevronRight className="h-3.5 w-3.5" />
         </div>
       </button>
-    </div>
-  )
-})
-GroupHeaderItem.displayName = 'GroupHeaderItem'
-
-// LEVEL 3: Element Item
-const ElementListItem = memo(({ element, status, onClick, onMouseEnter, onMouseLeave, style }: {
-  element: any, status: 'created' | 'demolished' | 'existing',
-  onClick: () => void, onMouseEnter?: () => void, onMouseLeave?: () => void,
-  style: React.CSSProperties
-}) => {
-  return (
-    <div style={style} className="w-full px-2">
       <button
-        onClick={onClick} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
+        onClick={onSelect}
+        onMouseEnter={() => onHover(item.data.ids)}
+        onMouseLeave={() => onHover(null)}
         className={cn(
-          'w-[calc(100%-36px)] ml-9 h-full text-left flex items-center gap-2 px-2 rounded-md transition-colors group select-none relative',
-          status === 'created' && 'hover:bg-green-50/50',
-          status === 'demolished' && 'hover:bg-red-50/50',
-          status === 'existing' && 'hover:bg-muted',
-          // Tree connection lines
-          "before:absolute before:-left-3 before:top-1/2 before:w-2 before:h-px before:bg-border/60 before:-translate-y-1/2",
-          "after:absolute after:-left-[27px] after:top-0 after:bottom-0 after:w-px after:bg-border/40"
+          "flex-1 h-[30px] flex items-center gap-2 pr-2 rounded-r-md transition-all border-y border-r border-l-0 select-none",
+          item.isSelected ? "bg-primary/10 border-primary/20" : "bg-transparent border-transparent hover:bg-muted/50",
+          item.isDimmed && "opacity-40 grayscale hover:opacity-70 hover:grayscale-0"
         )}
       >
         <div className={cn(
-          'w-1.5 h-1.5 rounded-full shrink-0',
-          status === 'created' && 'bg-green-500',
-          status === 'demolished' && 'bg-red-500',
-          status === 'existing' && 'bg-slate-300'
-        )} />
-        <span className={cn(
-          "truncate flex-1 font-mono text-[11px] tracking-tight text-slate-700 group-hover:text-slate-900",
-          status === 'created' && "text-green-700 group-hover:text-green-800",
-          status === 'demolished' && "text-red-700 group-hover:text-red-800 line-through decoration-red-300/50 opacity-70"
+          "w-4 h-4 rounded-full border flex items-center justify-center transition-colors ml-1",
+          item.isSelected ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover/row:border-muted-foreground/60"
         )}>
-          {element?.name || element?.id}
-        </span>
+          {item.isSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+        </div>
+        <Icon className={cn("h-3.5 w-3.5", item.isSelected ? "text-primary" : "text-muted-foreground")} />
+        <span className="flex-1 text-left text-[12px] font-medium truncate">{item.label}</span>
+        <DiffBadge stats={item.stats} />
+        <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 rounded-sm">{item.count}</span>
       </button>
     </div>
   )
 })
-ElementListItem.displayName = 'ElementListItem'
+CategoryRow.displayName = 'CategoryRow'
 
-// --- 4. Main Component ---
+const GroupRow = memo(({ item, onSelect, onExpand, onHover, style }: any) => {
+  return (
+    <div style={style} className="px-2 w-full flex items-center group/row">
+      <div className="h-[30px] w-[32px] flex items-center justify-end relative shrink-0">
+        <div className="absolute left-[19px] top-0 bottom-0 w-px bg-border/40" />
+        <button
+          onClick={(e) => { e.stopPropagation(); onExpand() }}
+          className="w-[24px] h-[24px] flex items-center justify-center hover:bg-muted/50 rounded z-10 mr-1 text-muted-foreground hover:text-foreground"
+        >
+          <ChevronRight className={cn("h-3 w-3 transition-transform duration-200", item.isExpanded && "rotate-90")} />
+        </button>
+      </div>
+      <button
+        onClick={onSelect}
+        onMouseEnter={() => onHover(item.data.ids)}
+        onMouseLeave={() => onHover(null)}
+        className={cn(
+          "flex-1 h-[30px] flex items-center gap-2 pr-2 rounded-md transition-all border select-none",
+          item.isSelected ? "bg-primary/10 border-primary/20" : "bg-transparent border-transparent hover:bg-muted/50",
+          item.isDimmed && "opacity-40 grayscale hover:opacity-70 hover:grayscale-0"
+        )}
+      >
+        <div className={cn(
+          "w-3 h-3 rounded-full border flex items-center justify-center transition-colors ml-0.5",
+          item.isSelected ? "bg-primary border-primary" : "border-muted-foreground/30 group-hover/row:border-muted-foreground/60"
+        )}>
+          {item.isSelected && <Check className="w-2 h-2 text-primary-foreground" />}
+        </div>
+        <Package className="h-3 w-3 text-muted-foreground/50" />
+        <span className="flex-1 text-left text-[11px] font-mono text-muted-foreground truncate">{item.label}</span>
+        <DiffBadge stats={item.stats} />
+        <span className="text-[9px] text-muted-foreground/50">{item.count}</span>
+      </button>
+    </div>
+  )
+})
+GroupRow.displayName = 'GroupRow'
+
+const ElementRow = memo(({ item, onClick, onHover, style }: any) => {
+  const status = item.data.status
+  return (
+    <div style={style} className="px-2 w-full flex items-center">
+      <div className="w-full h-full flex items-center relative pl-12">
+        <div className="absolute left-[19px] top-0 bottom-0 w-px bg-border/40" />
+        <div className="absolute left-[19px] top-1/2 w-2 h-px bg-border/40" />
+
+        <button
+          onClick={onClick}
+          onMouseEnter={() => onHover([item.id])}
+          onMouseLeave={() => onHover(null)}
+          className={cn(
+            "w-full h-[30px] flex items-center gap-2 px-2 rounded-md transition-all group relative border border-transparent select-none",
+            item.isSelected ? "bg-primary/10 text-primary border-primary/20" : "hover:bg-muted",
+            !item.isSelected && status === 'created' && "bg-green-500/5 hover:bg-green-500/10 text-green-700",
+            !item.isSelected && status === 'demolished' && "bg-red-500/5 hover:bg-red-500/10 text-red-700 line-through opacity-70",
+          )}
+        >
+          <div className={cn(
+            "w-1.5 h-1.5 rounded-full shrink-0",
+            status === 'created' ? "bg-green-500" :
+              status === 'demolished' ? "bg-red-500" : "bg-slate-300"
+          )} />
+          <span className="flex-1 text-left text-[11px] truncate font-mono tracking-tight">
+            {item.label}
+          </span>
+          {item.isSelected && <Check className="w-3 h-3 ml-auto opacity-50" />}
+        </button>
+      </div>
+    </div>
+  )
+})
+ElementRow.displayName = 'ElementRow'
+
+// --- 5. Main Component ---
 
 export function PhaseElementList() {
-  const { phases, modelElements, setSelectedElement, searchTerm, setSearchTerm, setHoveredElementIds } = useAppStore()
+  const {
+    filters, toggleCategoryFilter, setCategoryFilter,
+    toggleElementNameFilter, setElementNameFilter,
+    setSelectedElement, setHoveredElementIds, toggleElementSelection,
+    setHighlights, clearHighlights,
+    searchTerm, setSearchTerm,
+    selectedElementIds, modelElements
+  } = useAppStore()
 
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const { hierarchy, activeIds } = useElementTree()
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
+  const [expandedGrps, setExpandedGrps] = useState<Set<string>>(new Set())
+  const [scrollTop, setScrollTop] = useState(0)
 
-  const toggleCategory = useCallback((cat: string) => {
-    setExpandedCategories(prev => {
-      const next = new Set(prev); next.has(cat) ? next.delete(cat) : next.add(cat); return next
-    })
+  // NEW: Scroll Ref and "Pending" state for the 2-step scroll process
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [pendingScrollId, setPendingScrollId] = useState<string | null>(null)
+
+  // --- Step 1: Detect New Selection ---
+  useEffect(() => {
+    if (selectedElementIds.length > 0) {
+      // Get the latest selected item (the last one in the array)
+      const latestId = selectedElementIds[selectedElementIds.length - 1]
+      setPendingScrollId(latestId)
+    }
+  }, [selectedElementIds])
+
+  // --- AUTO-EXPAND / AUTO-COLLAPSE LOGIC ---
+  useEffect(() => {
+    const hasSearch = searchTerm.length > 0
+    const hasSelection = selectedElementIds.length > 0
+    const hasMaterialFilter = filters.materials.length > 0
+
+    if (!hasSearch && !hasSelection && !hasMaterialFilter) {
+      setExpandedCats(prev => prev.size > 0 ? new Set() : prev)
+      setExpandedGrps(prev => prev.size > 0 ? new Set() : prev)
+      return
+    }
+
+    if (hasSearch) {
+      const c = new Set<string>()
+      const g = new Set<string>()
+      Array.from(hierarchy.structure.keys()).forEach(cat => {
+        c.add(cat)
+        hierarchy.structure.get(cat)?.forEach((_, grpName) => {
+          g.add(`grp-${cat}-${grpName}`)
+        })
+      })
+      setExpandedCats(c); setExpandedGrps(g)
+      return
+    }
+
+    if (hasSelection) {
+      const c = new Set<string>(expandedCats)
+      const g = new Set<string>(expandedGrps)
+      let changed = false
+
+      selectedElementIds.forEach(id => {
+        const el = modelElements.find(e => e.id === id)
+        if (el && activeIds.has(el.id)) {
+          const cat = el.category || "Uncategorized"
+          if (!c.has(cat)) { c.add(cat); changed = true }
+          const gKey = `grp-${cat}-${el.name}`
+          if (!g.has(gKey)) { g.add(gKey); changed = true }
+        }
+      })
+      if (changed) { setExpandedCats(c); setExpandedGrps(g) }
+    }
+  }, [searchTerm, selectedElementIds, filters.materials, activeIds, hierarchy])
+
+  const handleExpand = useCallback((type: 'category' | 'group', id: string) => {
+    if (type === 'category') {
+      setExpandedCats(prev => {
+        const next = new Set(prev)
+        next.has(id) ? next.delete(id) : next.add(id)
+        return next
+      })
+    } else {
+      setExpandedGrps(prev => {
+        const next = new Set(prev)
+        next.has(id) ? next.delete(id) : next.add(id)
+        return next
+      })
+    }
   }, [])
 
-  const toggleGroup = useCallback((id: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next
-    })
-  }, [])
+  const handleCategorySelect = useCallback((cat: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const isMulti = e.ctrlKey || e.metaKey
+    const isSelected = filters.categories.includes(cat)
 
-  const filteredElementIds = useMemo(() => {
-    const ids = useAppStore.getState().getFilteredElementIds()
-    if (ids === null) return useAppStore.getState().modelElements.map(el => el.id).filter(Boolean) as string[]
-    return Array.from(ids)
-  }, [phases.selectedPhase, phases.filterMode, phases.dataTree, useAppStore.getState().filters, searchTerm])
+    if (isMulti) {
+      toggleCategoryFilter(cat)
+      const next = isSelected ? filters.categories.filter(c => c !== cat) : [...filters.categories, cat]
+      setHighlights({ type: 'category', values: next })
+    } else {
+      if (isSelected && filters.categories.length === 1) {
+        setCategoryFilter(null)
+        clearHighlights()
+      } else {
+        setCategoryFilter(cat)
+        setHighlights({ type: 'category', values: [cat] })
+      }
+    }
+  }, [filters, toggleCategoryFilter, setCategoryFilter, setHighlights, clearHighlights])
 
-  const getElementStatus = useCallback((elementId: string): 'created' | 'demolished' | 'existing' => {
-    if (!phases.dataTree || !phases.selectedPhase) return 'existing'
-    const phaseData = phases.dataTree.elementsByPhase[phases.selectedPhase]
-    if (!phaseData) return 'existing'
-    if (phaseData.created.has(elementId)) return 'created'
-    if (phaseData.demolished.has(elementId)) return 'demolished'
-    return 'existing'
-  }, [phases.dataTree, phases.selectedPhase])
+  const handleGroupSelect = useCallback((grpName: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const isMulti = e.ctrlKey || e.metaKey
+    const isSelected = filters.elementNames.includes(grpName)
 
-  const elementMap = useMemo(() => {
-    const map = new Map(); modelElements.forEach((el) => { if (el.id) map.set(el.id, el) }); return map
-  }, [modelElements])
+    if (isMulti) {
+      toggleElementNameFilter(grpName)
+      const next = isSelected ? filters.elementNames.filter(n => n !== grpName) : [...filters.elementNames, grpName]
+      setHighlights({ type: 'element', values: next })
+    } else {
+      if (isSelected && filters.elementNames.length === 1) {
+        setElementNameFilter(null)
+        clearHighlights()
+      } else {
+        setElementNameFilter(grpName)
+        setHighlights({ type: 'element', values: [grpName] })
+      }
+    }
+  }, [filters, toggleElementNameFilter, setElementNameFilter, setHighlights, clearHighlights])
 
-  // --- Aggregation & Sorting Logic ---
-  const hierarchy = useMemo(() => {
-    const IGNORED_CATEGORIES = new Set(['Lines', '<Room Separation>', 'Toposolid'])
-    const structure = new Map<string, Map<string, any[]>>()
+  // --- Virtualization Flattening ---
+  const flatItems = useMemo(() => {
+    const items: VirtualItem[] = []
 
-    // Stat Lookup Maps
-    const catStats = new Map<string, { added: number, removed: number }>()
-    const grpStats = new Map<string, { added: number, removed: number }>()
-
-    filteredElementIds.forEach(id => {
-      const el = elementMap.get(id); if (!el) return
-      const category = el.category || "Uncategorized"
-      if (IGNORED_CATEGORIES.has(category)) return
-
-      const name = el.name || "Unnamed"
-
-      // 1. Build Structure
-      if (!structure.has(category)) structure.set(category, new Map())
-      const catGroup = structure.get(category)!
-      if (!catGroup.has(name)) catGroup.set(name, [])
-      catGroup.get(name)!.push(el)
-
-      // 2. Calculate Stats (Added/Removed)
-      const status = getElementStatus(id)
-      const isAdded = status === 'created' ? 1 : 0
-      const isRemoved = status === 'demolished' ? 1 : 0
-
-      // Update Category Stats
-      const cs = catStats.get(category) || { added: 0, removed: 0 }
-      cs.added += isAdded
-      cs.removed += isRemoved
-      catStats.set(category, cs)
-
-      // Update Group Stats (Use composite key to avoid collision between identical names in diff categories)
-      const grpKey = `${category}::${name}`
-      const gs = grpStats.get(grpKey) || { added: 0, removed: 0 }
-      gs.added += isAdded
-      gs.removed += isRemoved
-      grpStats.set(grpKey, gs)
-    })
-
-    // 3. Sort Categories (Changed items first, then alphabetical)
-    const sortedCategories = Array.from(structure.keys()).sort((a, b) => {
-      const sA = catStats.get(a) || { added: 0, removed: 0 }
-      const sB = catStats.get(b) || { added: 0, removed: 0 }
-      const changeA = sA.added > 0 || sA.removed > 0
-      const changeB = sB.added > 0 || sB.removed > 0
-
-      // Priority: Has Diff > No Diff
-      if (changeA && !changeB) return -1
-      if (!changeA && changeB) return 1
-
-      // Secondary: Alphabetical
+    const sortedCats = Array.from(hierarchy.structure.keys()).sort((a, b) => {
+      const sA = hierarchy.catStats.get(a), sB = hierarchy.catStats.get(b)
+      const hasDiffA = (sA?.added || 0) + (sA?.removed || 0) > 0
+      const hasDiffB = (sB?.added || 0) + (sB?.removed || 0) > 0
+      if (hasDiffA !== hasDiffB) return hasDiffA ? -1 : 1
       return a.localeCompare(b)
     })
 
-    return { structure, sortedCategories, catStats, grpStats }
-  }, [filteredElementIds, elementMap, getElementStatus])
+    sortedCats.forEach(cat => {
+      const groups = hierarchy.structure.get(cat)!
+      const cStats = hierarchy.catStats.get(cat)
+      const allIds = Array.from(groups.values()).flat().map(e => e.id)
 
-  // --- Auto-Expand / Collapse Effect ---
-  useEffect(() => {
-    if (searchTerm && searchTerm.trim().length > 0) {
-      const allCats = new Set<string>()
-      const allGrps = new Set<string>()
-      hierarchy.sortedCategories.forEach(cat => {
-        allCats.add(cat)
-        const groups = hierarchy.structure.get(cat)
-        if (groups) {
-          Array.from(groups.keys()).forEach(grpName => allGrps.add(`grp-${cat}-${grpName}`))
-        }
-      })
-      setExpandedCategories(allCats)
-      setExpandedGroups(allGrps)
-    } else {
-      setExpandedCategories(new Set())
-      setExpandedGroups(new Set())
-    }
-  }, [hierarchy, searchTerm])
+      const isCatSelected = filters.categories.includes(cat)
+      const isAnyCatFilter = filters.categories.length > 0
 
-  // 3. Flattening for Virtualization
-  const flatVirtualItems = useMemo(() => {
-    const items: VirtualItem[] = []
-    const { structure, sortedCategories, catStats, grpStats } = hierarchy
-
-    sortedCategories.forEach(cat => {
-      const groupMap = structure.get(cat)!
-
-      // 1. Sort Groups (Changed first, then alphabetical)
-      const sortedGroups = Array.from(groupMap.keys()).sort((a, b) => {
-        const keyA = `${cat}::${a}`
-        const keyB = `${cat}::${b}`
-        const sA = grpStats.get(keyA) || { added: 0, removed: 0 }
-        const sB = grpStats.get(keyB) || { added: 0, removed: 0 }
-        const changeA = sA.added > 0 || sA.removed > 0
-        const changeB = sB.added > 0 || sB.removed > 0
-
-        if (changeA && !changeB) return -1
-        if (!changeA && changeB) return 1
-        return a.localeCompare(b)
-      })
-
-      // Collect Element IDs for Category Hover
-      const allCatElements: any[] = []
-      sortedGroups.forEach(g => allCatElements.push(...groupMap.get(g)!))
-
-      const cStats = catStats.get(cat) || { added: 0, removed: 0 }
-
-      // 2. Push Category Header
       items.push({
-        type: 'category',
-        category: cat,
-        count: allCatElements.length,
-        added: cStats.added,
-        removed: cStats.removed,
-        elementIds: allCatElements.map(e => e.id),
-        id: `cat-${cat}`
+        id: `cat-${cat}`, type: 'category', label: cat, depth: 0,
+        count: allIds.length, stats: cStats,
+        isExpanded: expandedCats.has(cat),
+        isSelected: isCatSelected,
+        isDimmed: isAnyCatFilter && !isCatSelected,
+        data: { ids: allIds }
       })
 
-      if (expandedCategories.has(cat)) {
-        sortedGroups.forEach(grpName => {
-          const elements = groupMap.get(grpName)!
-          const grpKey = `${cat}::${grpName}`
-          const gStats = grpStats.get(grpKey) || { added: 0, removed: 0 }
+      if (expandedCats.has(cat)) {
+        const sortedGrps = Array.from(groups.keys()).sort((a, b) => {
+          const keyA = `${cat}::${a}`, keyB = `${cat}::${b}`
+          const sA = hierarchy.grpStats.get(keyA), sB = hierarchy.grpStats.get(keyB)
+          const diffA = (sA?.added || 0) + (sA?.removed || 0)
+          const diffB = (sB?.added || 0) + (sB?.removed || 0)
+          if ((diffA > 0) !== (diffB > 0)) return diffA > 0 ? -1 : 1
+          return a.localeCompare(b)
+        })
 
-          // Sort Elements inside group (Created/Demo first)
-          elements.sort((a, b) => {
-            const w = { created: 0, demolished: 1, existing: 2 }
-            const sA = getElementStatus(a.id)
-            const sB = getElementStatus(b.id)
-            return w[sA] - w[sB]
-          })
+        sortedGrps.forEach(grp => {
+          const elements = groups.get(grp)!
+          const gKey = `grp-${cat}-${grp}`
+          const gStats = hierarchy.grpStats.get(`${cat}::${grp}`)
+          const isGrpSelected = filters.elementNames.includes(grp)
+          const isAnyGrpFilter = filters.elementNames.length > 0
 
-          const groupId = `grp-${cat}-${grpName}`
-
-          // 3. Push Group Header
           items.push({
-            type: 'group',
-            name: grpName,
-            count: elements.length,
-            added: gStats.added,
-            removed: gStats.removed,
-            elementIds: elements.map(e => e.id),
-            id: groupId
+            id: gKey, type: 'group', label: grp, depth: 1,
+            count: elements.length, stats: gStats,
+            isExpanded: expandedGrps.has(gKey),
+            isSelected: isGrpSelected,
+            isDimmed: isAnyGrpFilter && !isGrpSelected,
+            data: { ids: elements.map(e => e.id), realName: grp }
           })
 
-          if (expandedGroups.has(groupId)) {
+          if (expandedGrps.has(gKey)) {
+            elements.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
             elements.forEach(el => {
-              items.push({ type: 'element', element: el, id: el.id })
+              items.push({
+                id: el.id, type: 'element', label: el.name || "Unnamed", depth: 2,
+                data: { status: el.__status },
+                isSelected: selectedElementIds.includes(el.id)
+              })
             })
           }
         })
       }
     })
-
     return items
-  }, [hierarchy, expandedCategories, expandedGroups, getElementStatus])
+  }, [hierarchy, expandedCats, expandedGrps, filters, selectedElementIds])
 
-  // 4. Virtual Scroll
-  const ITEM_HEIGHT = 32
-  const [scrollTop, setScrollTop] = useState(0)
-  const CONTAINER_HEIGHT = 800
-  const BUFFER = 5
-  const visibleRange = useMemo(() => {
-    const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER)
-    const endIndex = Math.min(flatVirtualItems.length, Math.ceil((scrollTop + CONTAINER_HEIGHT) / ITEM_HEIGHT) + BUFFER)
-    return { startIndex, endIndex }
-  }, [scrollTop, flatVirtualItems.length])
+  // --- Step 2: Scroll Action ---
+  const ROW_HEIGHT = 30
+  const CONTAINER_H = 600
 
-  const visibleElements = flatVirtualItems.slice(visibleRange.startIndex, visibleRange.endIndex)
-  const totalHeight = flatVirtualItems.length * ITEM_HEIGHT
+  useEffect(() => {
+    // Only proceed if we have a pending scroll target AND the list data is ready
+    if (pendingScrollId && scrollContainerRef.current) {
+      const index = flatItems.findIndex(item => item.id === pendingScrollId)
+
+      if (index !== -1) {
+        // Calculate position to center the item in the view
+        const targetTop = (index * ROW_HEIGHT) - (CONTAINER_H / 2) + (ROW_HEIGHT / 2)
+
+        scrollContainerRef.current.scrollTo({
+          top: targetTop,
+          behavior: 'smooth'
+        })
+
+        // Clear the pending state so we don't scroll again on next render
+        setPendingScrollId(null)
+      }
+    }
+  }, [flatItems, pendingScrollId]) // Re-run when flatItems updates (post-expansion)
+
+  // --- Rendering ---
+  const visibleCount = Math.ceil(CONTAINER_H / ROW_HEIGHT) + 5
+  const startIndex = Math.floor(scrollTop / ROW_HEIGHT)
+  const endIndex = Math.min(flatItems.length, startIndex + visibleCount)
+  const visibleItems = flatItems.slice(Math.max(0, startIndex - 2), endIndex)
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <div className="px-3 py-2 border-b border-border bg-background">
+    <div className="flex flex-col h-full bg-background text-foreground">
+      <div className="p-3 border-b sticky top-0 bg-background z-20">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input
-            type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-8 pr-2 py-1.5 text-[11px] font-mono bg-muted/30 border border-transparent rounded-md focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground placeholder:font-sans"
+            className="w-full h-8 pl-8 pr-3 text-xs bg-muted/40 border border-transparent focus:border-primary/50 focus:bg-background rounded-md outline-none transition-all placeholder:text-muted-foreground/70"
+            placeholder="Search elements..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar" onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}>
-        <div style={{ height: totalHeight, position: 'relative' }}>
-          {visibleElements.map((item, index) => {
-            const actualIndex = visibleRange.startIndex + index
-            const style = { position: 'absolute' as const, top: 0, left: 0, transform: `translateY(${actualIndex * ITEM_HEIGHT}px)`, height: ITEM_HEIGHT }
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto custom-scrollbar"
+        onScroll={e => setScrollTop(e.currentTarget.scrollTop)}
+      >
+        <div style={{ height: flatItems.length * ROW_HEIGHT, position: 'relative' }}>
+          {visibleItems.length > 0 ? visibleItems.map((item, i) => {
+            const top = (Math.max(0, startIndex - 2) + i) * ROW_HEIGHT
 
             if (item.type === 'category') {
-              return (
-                <CategoryHeaderItem
-                  key={item.id} category={item.category} count={item.count}
-                  added={item.added} removed={item.removed}
-                  style={style}
-                  isExpanded={expandedCategories.has(item.category)}
-                  onClick={() => toggleCategory(item.category)}
-                  onMouseEnter={() => setHoveredElementIds(item.elementIds)}
-                  onMouseLeave={() => setHoveredElementIds(null)}
-                />
-              )
+              return <CategoryRow
+                key={item.id} item={item} style={{ position: 'absolute', top, height: ROW_HEIGHT }}
+                onExpand={() => handleExpand('category', item.label)}
+                onSelect={(e: React.MouseEvent) => handleCategorySelect(item.label, e)}
+                onHover={setHoveredElementIds}
+              />
             } else if (item.type === 'group') {
-              return (
-                <GroupHeaderItem
-                  key={item.id} name={item.name} count={item.count}
-                  added={item.added} removed={item.removed}
-                  style={style}
-                  isExpanded={expandedGroups.has(item.id)}
-                  onClick={() => toggleGroup(item.id)}
-                  onMouseEnter={() => setHoveredElementIds(item.elementIds)}
-                  onMouseLeave={() => setHoveredElementIds(null)}
-                />
-              )
+              return <GroupRow
+                key={item.id} item={item} style={{ position: 'absolute', top, height: ROW_HEIGHT }}
+                onExpand={() => handleExpand('group', item.id)}
+                onSelect={(e: React.MouseEvent) => handleGroupSelect(item.data.realName, e)}
+                onHover={setHoveredElementIds}
+              />
             } else {
-              return (
-                <ElementListItem
-                  key={item.id} element={item.element} style={style}
-                  status={getElementStatus(item.element.id)}
-                  onClick={() => setSelectedElement(item.element.id, item.element)}
-                  onMouseEnter={() => setHoveredElementIds([item.element.id])}
-                  onMouseLeave={() => setHoveredElementIds(null)}
-                />
-              )
+              return <ElementRow
+                key={item.id} item={item} style={{ position: 'absolute', top, height: ROW_HEIGHT }}
+                onClick={(e: React.MouseEvent) => {
+                  const isMulti = e.ctrlKey || e.metaKey
+                  if (isMulti) {
+                    toggleElementSelection(item.id, item.data)
+                  } else {
+                    setSelectedElement(item.id, undefined)
+                  }
+                }}
+                onHover={setHoveredElementIds}
+              />
             }
-          })}
+          }) : (
+            <EmptyFilterState />
+          )}
         </div>
-        {flatVirtualItems.length === 0 && <div className="p-4 text-center text-xs text-muted-foreground">No elements found</div>}
       </div>
     </div>
   )

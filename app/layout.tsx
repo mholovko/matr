@@ -63,9 +63,9 @@ export default function RootLayout({
 
           {/* 3. Main UI Overlay (Panels) */}
           <div className="absolute inset-0 z-10 pointer-events-none [&>*]:pointer-events-auto">
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
+
+            {children}
+
           </div>
 
         </main>

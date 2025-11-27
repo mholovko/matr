@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow"
 import { cn } from "@/lib/utils"
 import { Box, Layers, Palette, MousePointerClick, Package, BrickWall } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
+import { FilterPills } from "../dashboard/filter-pills"
 
 export function ViewModeToggle() {
     const { viewMode, setViewMode, renderMode, setRenderMode, selectionMode, setSelectionMode } = useAppStore(
@@ -38,8 +39,12 @@ export function ViewModeToggle() {
     }, [])
 
     return (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-row gap-3 items-center">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-3 items-center">
 
+            {/* Filter Pills */}
+            <FilterPills />
+
+            <div className="flex flex-row gap-3 items-center">
             {/* Selection Mode Dropdown */}
             <div className="relative" ref={selectionMenuRef}>
                 {isSelectionMenuOpen && (
@@ -170,6 +175,7 @@ export function ViewModeToggle() {
                 </button>
             </div>
 
+            </div>
         </div>
     )
 }
