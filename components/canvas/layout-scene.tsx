@@ -48,7 +48,7 @@ export function LayoutScene() {
 
     return (
         <div
-            className="absolute inset-x-0 top-0 z-0 transition-all duration-300 ease-in-out"
+            className={`absolute inset-x-0 top-0 z-0 transition-[bottom] ${pathname === '/materials' ? 'invisible' : ''}`}
             style={{ bottom: bottomOffset }}
         >
             {(pathname === '/' || pathname === '/inventory' || pathname === '/retrofit') && <ViewModeToggle />}

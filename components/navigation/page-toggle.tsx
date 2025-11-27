@@ -8,6 +8,7 @@ const pages = [
   { id: 'performance', label: 'Performance', path: '/performance' },
   { id: 'retrofit', label: 'Retrofit', path: '/retrofit' },
   { id: 'feed', label: 'Feed', path: '/feed' },
+  { id: 'materials', label: 'Materials', path: '/materials' },
 ] as const
 
 export function PageToggle() {
@@ -15,22 +16,33 @@ export function PageToggle() {
   const router = useRouter()
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-1 bg-background/95 backdrop-blur-sm border border-border rounded-lg p-1 shadow-lg">
-        {pages.map((page) => {
+    <div className="fixed top-1 left-1/2 -translate-x-1/2 z-50">
+      <div className="flex items-center bg-white rounded-none">
+        {pages.map((page, index) => {
           const isActive = pathname === page.path
           return (
             <button
               key={page.id}
               onClick={() => router.push(page.path)}
               className={cn(
-                "px-4 py-2 text-sm font-medium rounded-md transition-all",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                "relative px-6 py-2.5 text-sm transition-colors duration-200 hover:text-black focus:outline-none",
+                isActive ? "text-black" : "text-neutral-500"
               )}
             >
-              {page.label}
+              <div className="grid place-items-center">
+                <span className="invisible font-bold col-start-1 row-start-1" aria-hidden="true">
+                  {page.label}
+                </span>
+                <span className={cn("col-start-1 row-start-1", isActive ? "font-bold" : "font-normal")}>
+                  {page.label}
+                </span>
+              </div>
+
+              {index < pages.length - 1 && (
+                <span className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 text-neutral-300 text-sm select-none pointer-events-none">
+                  |
+                </span>
+              )}
             </button>
           )
         })}
