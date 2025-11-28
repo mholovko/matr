@@ -13,6 +13,8 @@ export type SortOption =
 
 export type DisplayMode = 'card' | 'thumbnail'; // NEW
 
+export type DashboardViewMode = 'BANK' | 'PLANNING';
+
 export interface MaterialFilterState {
     search: string;
     classification: Classification | 'ALL';

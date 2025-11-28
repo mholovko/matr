@@ -14,8 +14,11 @@ import {
     ExternalLink
 } from "lucide-react"
 import { cn } from '@/lib/utils'
-import { MaterialFilterState, SortOption } from "@/types/materials-filters"
+import { MaterialFilterState, SortOption, DashboardViewMode } from "@/types/materials-filters"
+
 import { Classification } from "@/types/material-passport"
+import { PhaseSelector } from "@/components/dashboard/phases/phase-selector"
+
 
 interface MaterialsDashboardProps {
     filters: MaterialFilterState
@@ -23,9 +26,11 @@ interface MaterialsDashboardProps {
     totalCount: number
     isCollapsed: boolean
     setIsCollapsed: (v: boolean) => void
+    viewMode: DashboardViewMode
+    setViewMode: (mode: DashboardViewMode) => void
 }
 
-export function MaterialsDashboard({ filters, onFilterChange, totalCount, isCollapsed, setIsCollapsed }: MaterialsDashboardProps) {
+export function MaterialsDashboard({ filters, onFilterChange, totalCount, isCollapsed, setIsCollapsed, viewMode, setViewMode }: MaterialsDashboardProps) {
 
     return (
         <div
@@ -57,18 +62,28 @@ export function MaterialsDashboard({ filters, onFilterChange, totalCount, isColl
                         "flex items-center overflow-hidden transition-all",
                         isCollapsed ? "justify-center w-full" : "gap-2"
                     )}>
-                        <SlidersHorizontal className={cn(
-                            "shrink-0 text-muted-foreground transition-colors",
-                            "w-4 h-4",
-                            isCollapsed && "text-foreground"
-                        )} />
-
-                        <span className={cn(
-                            "text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap",
-                            isCollapsed ? "opacity-0 w-0" : "opacity-100"
+                        <div className={cn(
+                            "flex p-1 bg-muted rounded-lg transition-all",
+                            isCollapsed ? "opacity-0 w-0 p-0" : "opacity-100"
                         )}>
-                            Control Panel
-                        </span>
+                            {[
+                                { id: 'BANK', label: 'Material Bank' },
+                                { id: 'PLANNING', label: 'Material Planning' }
+                            ].map((mode) => (
+                                <button
+                                    key={mode.id}
+                                    onClick={() => setViewMode(mode.id as DashboardViewMode)}
+                                    className={cn(
+                                        "px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all whitespace-nowrap",
+                                        viewMode === mode.id
+                                            ? "bg-background text-foreground shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    {mode.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <button
@@ -114,6 +129,16 @@ export function MaterialsDashboard({ filters, onFilterChange, totalCount, isColl
 
                 {/* Filters */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-10 custom-scrollbar bg-background/30">
+
+                    {/* Timeline (Phase Selector) - Only in BANK mode */}
+                    {viewMode === 'BANK' && (
+                        <section>
+                            <h3 className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Timeline</h3>
+                            <div className="rounded-lg overflow-hidden border border-border">
+                                <PhaseSelector />
+                            </div>
+                        </section>
+                    )}
 
                     {/* View Mode */}
                     <section>
@@ -193,22 +218,6 @@ export function MaterialsDashboard({ filters, onFilterChange, totalCount, isColl
                         </div>
                     </section>
 
-                    {/* Usage */}
-                    <section>
-                        <h3 className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Usage</h3>
-                        <button
-                            onClick={() => onFilterChange({ usage: filters.usage === 'USED' ? 'ALL' : 'USED' })}
-                            className={cn(
-                                "w-full flex items-center gap-3 px-3 py-3 text-xs border rounded-md transition-all",
-                                filters.usage === 'USED'
-                                    ? "bg-blue-500/5 border-blue-500/20 text-blue-700"
-                                    : "bg-background border-border text-muted-foreground hover:border-foreground/30"
-                            )}
-                        >
-                            <CheckCircle2 size={14} className={filters.usage === 'USED' ? "text-blue-600" : "text-muted-foreground"} />
-                            <span className="font-medium">Used in Project Only</span>
-                        </button>
-                    </section>
 
 
                     {/* Classification */}

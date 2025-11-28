@@ -202,4 +202,5 @@ export type UnifiedMaterialPassport = MaterialPassport | ExistingMaterialPasspor
 export type EnrichedMaterialPassport = UnifiedMaterialPassport & {
     isUsed: boolean;
     volume: number;
+    phases: string[];
 };

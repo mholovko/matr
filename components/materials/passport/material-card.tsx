@@ -81,6 +81,17 @@ export const MaterialCardCompact = memo(({ material }: { material: EnrichedMater
                         <span className="text-[10px] text-black/60 uppercase tracking-wider truncate mt-1">
                             {manufacturer}
                         </span>
+
+                        {/* Phases List */}
+                        {material.phases && material.phases.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                                {material.phases.map(phase => (
+                                    <span key={phase} className="text-[8px] font-mono font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200 uppercase tracking-tight">
+                                        {phase}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* 2. The Signature Black Divider */}
