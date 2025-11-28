@@ -62,7 +62,7 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
     const manufacturer = 'manufacturer' in material ? material.manufacturer : 'Existing Stock';
 
     const handleCheckInInventory = () => {
-        setMaterialFilter(material.name);
+        setMaterialFilter(material.id);
         router.push('/inventory');
     };
 

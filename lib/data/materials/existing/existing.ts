@@ -3,7 +3,7 @@ import { ExistingMaterialPassport } from "@/types/material-passport";
 
 
 export const existingMaterials: ExistingMaterialPassport[] = [{
-    id: "INT-LINING-001",
+    id: "MATR_PLAS_LimePlaster_Debonded",
     name: "Traditional Lime Plaster & Wallpaper",
     description: "Original 3-coat lime plaster applied over timber laths. Surface finished with multiple layers of historic wallpaper. Evidence of debonding (nib failure) from laths.",
     classification: Classification.LINING,
@@ -67,7 +67,7 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
     }
 },
 {
-    id: "INT-STRUCT-004",
+    id: "MATR_WOOD_SoftwoodStud_Rough",
     name: "Vertical Timber Stud (4x2)",
     description: "Rough sawn structural timber post. Dark coloration suggests oxidation/age. Appears structurally sound within the cavity.",
     classification: Classification.STRUCTURAL_TIMBER,
@@ -126,7 +126,7 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
     }
 },
 {
-    id: "INT-SHEATH-001",
+    id: "MATR_WOOD_TimberLath_Brittle",
     name: "Sawn Softwood Laths",
     description: "Horizontal Riven/Sawn timber laths nailed to vertical studs. Provides the substrate for the plaster keys.",
     classification: Classification.SHEATHING,
@@ -186,7 +186,7 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
 },
 
 {
-    id: "FLR-L01-ORIG",
+    id: "MATR_WOOD_PineFloor_Painted",
     name: "Original Softwood Floorboards (150mm)",
     description: "Original suspended timber floorboards running perpendicular to joists. Surface is heavily stained/painted but test patch (Photo 2) reveals sound timber underneath. Gaps present between boards.",
     classification: Classification.FLOORING,
@@ -251,7 +251,7 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
     }
 },
 {
-    id: "STR-MASONRY-002",
+    id: "MATR_MASO_BrickSolid_ReclaimedRed",
     name: "Solid Brickwork",
     description: "Exposed solid masonry wall following plaster removal. Visual evidence of a rough relieving arch indicates a former fireplace opening that has been infilled.",
     classification: Classification.MASONRY,
@@ -316,7 +316,7 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
     }
 },
 {
-    id: "EXT-FACADE-005",
+    id: "MATR_MASO_BrickFace_RedRubber",
     name: "Red Clay Facing Brick",
     description: "External solid masonry wall laid in Flemish Bond. High-quality red clay 'Rubbers' or smooth facing bricks with very tight mortar joints. Vertical separation crack visible at the window reveal junction.",
     classification: Classification.MASONRY,

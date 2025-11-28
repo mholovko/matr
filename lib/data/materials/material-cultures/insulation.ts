@@ -10,8 +10,8 @@ export const insulationMaterials: MaterialPassport[] = [
   // -- ROW 1 -------------------------------------------------------
 
   {
-    id: uuidv4(),
-    name: "HBA_Insulation - Expanded Polystyrene (EPS)",
+    id: "MC_INSU_SisalWool_Sisaltech",
+    name: "Sisalwool Batt",
     manufacturer: "Sisaltech",
     description: "Pre-cut batts made from compressed sisal fibres mixed with wool. Suitable for use between rafters, joists, stud walls and in loft spaces, it is renewable and biodegradable and provides excellent thermal and acoustic insulation as well as vapour permeability.",
     classification: Classification.INSULATION,
@@ -51,7 +51,7 @@ export const insulationMaterials: MaterialPassport[] = [
     }
   },
   {
-    id: uuidv4(),
+    id: "MC_INSU_SemiRigidHemp_BioWall",
     name: "Semi Rigid Hemp - Bio Wall",
     manufacturer: "Hemspan",
     description: "Semi-rigid hemp bio walls are insulation panels made from compressed hemp fibres that can be used for internal or external wall insulation. They offer high thermal and acoustic insulation, are renewable, biodegradable, and breathable.",
@@ -93,7 +93,7 @@ export const insulationMaterials: MaterialPassport[] = [
   // -- ROW 2 -------------------------------------------------------
 
   {
-    id: uuidv4(),
+    id: "MC_INSU_WoodFibreBatt",
     name: "Wood Fibre Batt",
     manufacturer: "Pavatex",
     description: "Primarily made from waste residual wood and non-sawable thinnings produced in the production of construction grade timber, providing either a rigid or flexible insulation for floors and roofs between studs and rafters. It can be treated with a water repellant for use below a rainscreen cladding.",
@@ -132,7 +132,7 @@ export const insulationMaterials: MaterialPassport[] = [
     }
   },
   {
-    id: uuidv4(),
+    id: "MC_INSU_ExpandedCorkBoards",
     name: "Expanded Cork Boards",
     manufacturer: "Amorim",
     description: "Cork panels or blocks are the outer bark of cork oak trees to deliver efficient thermal insulation properties. Its distinctive cellular structure, replete with air pockets, confers remarkable acoustic insulation and it naturally resists combustion and acts as a fire retardant. Indigenous to Spain and Portugal.",
@@ -174,7 +174,7 @@ export const insulationMaterials: MaterialPassport[] = [
   // -- ROW 3 -------------------------------------------------------
 
   {
-    id: uuidv4(),
+    id: "MC_INSU_HempBatt_BioFlex",
     name: "Hemp Batt - Bio Flex",
     manufacturer: "Hemspan",
     description: "A pre-cut flexible material made from technical hemp fibres that can be used for internal, thermal or acoustic insulation. Made from organically grown hemp, it is breathable and carbon-negative.",
@@ -213,7 +213,7 @@ export const insulationMaterials: MaterialPassport[] = [
     }
   },
   {
-    id: uuidv4(),
+    id: "MC_INSU_RecycledDenimBatt",
     name: "Recycled Denim Batt",
     manufacturer: "InnoTherm",
     description: "Denim insulation is house insulation made from recycled jeans and can be used in walls, ceilings, floors, attics, and other internal spaces. The processing material results in a finished product made up of 80-85% recycled denim.",
@@ -255,7 +255,7 @@ export const insulationMaterials: MaterialPassport[] = [
   // -- ROW 4 -------------------------------------------------------
 
   {
-    id: uuidv4(),
+    id: "MC_INSU_HempcreteBlocks",
     name: "Hempcrete Blocks",
     manufacturer: "Isohemp",
     description: "Hempcrete blocks are more thermally efficient than concrete blocks. They are non loadbearing, ideally suited to doubling existing walls from the inside or the outside. They help to regulate humidity and internal temperature.",
@@ -294,7 +294,7 @@ export const insulationMaterials: MaterialPassport[] = [
     }
   },
   {
-    id: uuidv4(),
+    id: "MC_INSU_CompressedSheepswoolBatt",
     name: "Compressed Sheepswool Batt",
     manufacturer: "Thermafleece",
     description: "Manufactured by Thermafleece in Yorkshire using British wool, a great proportion of it is sourced from grazing land in Yorkshire, using 75% British Wool and 25% recycled polyester.",
@@ -336,7 +336,7 @@ export const insulationMaterials: MaterialPassport[] = [
   // -- ROW 5 -------------------------------------------------------
 
   {
-    id: uuidv4(),
+    id: "MC_INSU_WoodFibre_AirInjected",
     name: "Wood Fibre Air injected",
     manufacturer: "Steico",
     description: "Waste wood fibres are dried and combined with a fire retardant and sold loose for application with a high pressure air pump. Air injection of wood fibre insulation can also be used in prefabricated panels.",
@@ -377,7 +377,7 @@ export const insulationMaterials: MaterialPassport[] = [
     }
   },
   {
-    id: uuidv4(),
+    id: "MC_INSU_Strawbale_Insitu",
     name: "In-situ Strawbale",
     manufacturer: "Local",
     description: "When compacted, straw bales can be used as external wall insulation: they are highly insulative and low in embodied energy. They are commonly paired with a timber structural frame and lime (rendered both internally and externally).",

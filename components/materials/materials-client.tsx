@@ -66,20 +66,20 @@ export function MaterialsClient() {
         const materialMap = aggregateMaterials(workingSet)
 
         // 1b. Calculate Material Phases (Global Context - All Elements)
-        // We want to show ALL phases where a material is used, regardless of current view
+        // We want to show all created phases where a material is used, regardless of current view
         const materialPhasesMap = new Map<string, Set<string>>()
 
         if (phases.dataTree) {
             modelElements.forEach(el => {
-                const elementPhases = phases.dataTree!.elementPhaseInfo[el.id]?.activePhases || []
-                if (elementPhases.length === 0) return
+                const createdPhase = phases.dataTree!.elementPhaseInfo[el.id]?.createdPhase
+                if (!createdPhase) return
 
                 const materialQuantities = el.properties?.["Material Quantities"] || {}
                 Object.keys(materialQuantities).forEach(matName => {
                     if (!materialPhasesMap.has(matName)) {
                         materialPhasesMap.set(matName, new Set())
                     }
-                    elementPhases.forEach(p => materialPhasesMap.get(matName)!.add(p))
+                    materialPhasesMap.get(matName)!.add(createdPhase)
                 })
             })
         }
@@ -88,8 +88,8 @@ export function MaterialsClient() {
         // 2. Enrich with Model Data
         let result: EnrichedMaterialPassport[] = combinedMaterials.map(mat => {
             // Match by Name (Exact match required as per Speckle data)
-            const modelData = materialMap.get(mat.name)
-            const phasesSet = materialPhasesMap.get(mat.name)
+            const modelData = materialMap.get(mat.id)
+            const phasesSet = materialPhasesMap.get(mat.id)
 
             return {
                 ...mat,
