@@ -3,6 +3,8 @@ import { SpeckleObject } from '@/lib/speckle/types'
 import { FeedEvent } from '@/lib/data/feed'
 import { RoomPerformanceData } from '@/lib/data/performance'
 import { PhaseDataTree } from '@/lib/data/phase-map'
+import { AssetLifecycle } from '@/types/lifecycle'
+import { lifecycleMap } from './data/phases'
 
 // ------------------------------------------------------------------
 // Types & Interfaces
@@ -26,6 +28,7 @@ interface PhaseState {
     selectedPhase: string | null
     filterMode: 'complete' | 'new' | 'demolished' | 'diff'
     colorCodingEnabled: boolean
+    lifecycleMap: Record<string, AssetLifecycle>
 }
 
 interface ModelData {
@@ -228,7 +231,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         dataTree: null,
         selectedPhase: null,
         filterMode: 'complete',
-        colorCodingEnabled: true
+        colorCodingEnabled: true,
+        lifecycleMap: lifecycleMap,
     },
 
     // --- Actions ---

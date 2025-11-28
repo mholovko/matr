@@ -378,5 +378,70 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
         density: 1950, // High density facing brick
         moistureContent: 5 // Appears dry on face
     }
+},
+{
+    id: "MATR_CERAM_GeoTile_Hallway",
+    name: "Victorian Geometric Floor Tiles",
+    description: "Original unglazed geometric/encaustic ceramic floor tiles in a polychromatic pattern (Red, Buff, Black). Laid in a traditional lattice design with a border. High-density vitrified clay body.",
+    classification: Classification.FLOORING,
+    image: "/images/survey/hallway-tiles.jpg",
+
+    auditData: {
+        condition: ConditionRating.GOOD, // 2 - Intact, minor wear consistent with age
+        defects: [
+            "Surface grime and old wax build-up",
+            "Minor grout erosion",
+            "Potential debonding at perimeter (hollow sounding)",
+            "Uneven surface (settlement)"
+        ],
+        approximateAgeYear: 1900,
+        isHazardous: false, // *Note: Do not seal with non-breathable varnish*
+        recommendedStrategy: InterventionStrategy.RETAIN_PROTECT // Heritage Asset
+    },
+
+    resourceValue: {
+        recoveryPotential: 0.6, // Moderate - tiles are often brittle and bedded hard; breakage rate during lift is high
+        reclamationValue: 150.00, // Per m2 - High value for original geometric sets
+        avoidedCarbon: 28.0 // kgCO2e/m2 (Ceramic firing is extremely energy intensive)
+    },
+
+    matrixMetrics: {
+        financialCost: {
+            sunkCost: true,
+            demolitionCost: 45.00, // High labor to lift carefully
+            repairCost: 80.00, // Specialist chemical cleaning and sealing per m2
+            currency: 'GBP'
+        },
+        provenance: {
+            originLocation: "IN_SITU",
+            distanceToSiteMiles: 0,
+            transportMode: 'None',
+            isEcoregional: true // Likely manufactured in Stoke-on-Trent or Shropshire
+        },
+        embodiedCarbon: {
+            a1a3: 0,
+            a4: 0,
+            a5: 0,
+            b1b5: 0,
+            c1c4: 12.0, // Dense heavy waste if demolished
+            d: -20.0, // Significant credit if successfully salvaged
+            totalEmbodied: 12.0,
+            biogenicStorage: 0
+        }
+    },
+
+    circularity: {
+        detachabilityIndex: 0.3, // Difficult - likely bedded in lime-ash or cement
+        recycledContent: 0,
+        materialHealth: 'Red_List_Free',
+        endOfLifeStrategy: 'Reuse_Direct', // Salvage for repair stock
+        expectedLifespan: 100 // Indefinite lifespan if maintained
+    },
+
+    physics: {
+        thermalConductivity: 1.3, // High - feels cold, conductive
+        density: 2300, // Very dense vitrified clay (High Thermal Mass)
+        moistureContent: 1 // Impervious body but joints allow breathing
+    }
 }
 ]
