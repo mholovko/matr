@@ -41,6 +41,7 @@ export interface MaterialPassport {
     description: string;
     classification: Classification;
     image?: string;
+    itemDefinition?: MaterialItemDefinition
 
     /**
      * The Material Matrix: Core Decision Framework
@@ -114,6 +115,8 @@ export interface ExistingMaterialPassport {
     description: string;
     classification: Classification;
     image?: string; // Survey photo URL
+
+    itemDefinition?: MaterialItemDefinition;
 
     /**
      * Audit Data: The physical state of the material found on site.
@@ -203,4 +206,16 @@ export type EnrichedMaterialPassport = UnifiedMaterialPassport & {
     isUsed: boolean;
     volume: number;
     phases: string[];
+    age?: { ms: number, label: string };
 };
+
+export interface MaterialItemDefinition {
+    name: string;           // e.g. "Standard UK Brick" or "4x2 Stud (2.4m)"
+    unit: string;           // e.g. "brick" or "stud"
+    dimensions: {
+        length: number;     // in mm
+        width: number;      // in mm
+        depth: number;      // in mm
+    };
+    spacing?: number;       // Optional: gap/mortar joint in mm (for more accurate calc)
+}

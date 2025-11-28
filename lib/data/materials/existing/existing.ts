@@ -192,6 +192,17 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
     classification: Classification.FLOORING,
     image: "/images/survey/floor-sanding-patch.jpg", // Link to Image 2
 
+    itemDefinition: {
+        name: "Pine Board (3m)",
+        unit: "3m board",
+        dimensions: {
+            length: 3000, // Standard 3m length for estimation
+            width: 150,   // Width from description
+            depth: 40
+        },
+        spacing: 2 // Gap allowance between boards
+    },
+
     auditData: {
         condition: ConditionRating.FAIR, // 3 - Structurally sound but aesthetically poor
         defects: [
@@ -257,6 +268,13 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
     classification: Classification.MASONRY,
     image: "/images/survey/brick-arch-detail.jpg", // Link to Image 3
 
+    itemDefinition: {
+        name: "Std Imperial Brick",
+        unit: "brick",
+        dimensions: { length: 228, width: 108, depth: 68 }, // Historic UK Imperial size
+        spacing: 10 // 10mm Mortar joint
+    },
+
     auditData: {
         condition: ConditionRating.FAIR, // 3 - Structurally stable but needs surface repair
         defects: [
@@ -321,6 +339,13 @@ export const existingMaterials: ExistingMaterialPassport[] = [{
     description: "External solid masonry wall laid in Flemish Bond. High-quality red clay 'Rubbers' or smooth facing bricks with very tight mortar joints. Vertical separation crack visible at the window reveal junction.",
     classification: Classification.MASONRY,
     image: "/images/survey/brick-flemish-bond.jpg", // Link to your uploaded image
+
+    itemDefinition: {
+        name: "Std Imperial Brick",
+        unit: "brick",
+        dimensions: { length: 228, width: 108, depth: 68 }, // Historic UK Imperial size
+        spacing: 10 // 10mm Mortar joint
+    },
 
     auditData: {
         condition: ConditionRating.GOOD, // 2 - Bricks are sound, defect is localized

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { EnrichedMaterialPassport, Classification } from '@/types/material-passport';
 import { Factory, Leaf, DollarSign, MapPin, Tractor, Truck, Box, CalendarClock, Thermometer, Recycle } from 'lucide-react'; // Added CalendarClock
 import { SortOption } from '@/types/materials-filters';
@@ -35,6 +35,30 @@ interface ThumbnailProps {
 export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => {
     const router = useRouter();
     const setMaterialFilter = useAppStore(state => state.setMaterialFilter);
+
+    const itemData = useMemo(() => {
+        // Only calculate if sorting by volume and definition exists
+        if (!sortBy.includes('VOLUME') || !material.itemDefinition || material.volume <= 0) return null;
+
+        const { length, width, depth } = material.itemDefinition.dimensions;
+        const spacing = material.itemDefinition.spacing || 0;
+
+        // Convert mm to meters
+        const l_m = (length + spacing) / 1000;
+        const w_m = (width + spacing) / 1000;
+        const d_m = depth / 1000;
+
+        const singleItemVolume = l_m * w_m * d_m;
+        if (singleItemVolume === 0) return null;
+
+        const count = Math.round(material.volume / singleItemVolume);
+
+        // Formatting: "Bricks", "Studs", "Tiles"
+        // Heuristic: Extract the first word or use generic plural
+        const unitName = material.itemDefinition.unit + 's';
+
+        return { count, label: unitName };
+    }, [material.volume, material.itemDefinition, sortBy]);
 
     const getPrimaryMetric = () => {
         // 1. AGE (Bank Mode)
@@ -128,11 +152,11 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
         <ContextMenu>
             <ContextMenuTrigger>
                 <div className="flex flex-col h-full group cursor-pointer select-none relative">
-                    {material.isUsed && (
+                    {/* {material.isUsed && (
                         <div className="absolute top-0 right-0 z-20 bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                             USED
                         </div>
-                    )}
+                    )} */}
 
                     {/* Text Block */}
                     <div className="flex flex-col min-w-0 mb-4">
@@ -145,10 +169,20 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
                             </span>
                         </div>
                         <div className="w-full border-b border-black mb-1" />
-                        <div className="text-2xl font-medium text-black tracking-tight -ml-0.5">
-                            <span className="text-lg align-top mr-0.5 font-normal">{metric.prefix}</span>
-                            {metric.value}
-                            <span className="text-sm font-normal text-black/60 ml-1">{metric.unit}</span>
+                        <div className="flex flex-row justify-between items-center">
+                            {/* Main Metric */}
+                            <div className="text-2xl font-medium text-black tracking-tight -ml-0.5 leading-none">
+                                <span className="text-lg align-top mr-0.5 font-normal">{metric.prefix}</span>
+                                {metric.value}
+                                <span className="text-sm font-normal text-black/60 ml-1">{metric.unit}</span>
+                            </div>
+
+                            {/* Secondary Item Count (Only for Volume Sort) */}
+                            {itemData && (
+                                <div className="text-[10px] font-mono text-black/40 mt-1 font-medium">
+                                    ~{itemData.count.toLocaleString()} {itemData.label}
+                                </div>
+                            )}
                         </div>
                     </div>
 
