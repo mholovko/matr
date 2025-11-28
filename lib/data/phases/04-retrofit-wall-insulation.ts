@@ -132,7 +132,7 @@ export const retrofitEwiLifecycle: AssetLifecycle = {
         {
             stage: '5_Construction',
             status: 'COMPLETED',
-            dates: { start: '2025-11-20', end: '2026-01-20' },
+            dates: { start: '2025-10-20', end: '2025-11-20' },
             completionPercentage: 100,
             contractor: 'Retrofit Cooperatives Birmingham',
             notes: 'Installation complete. Delays in Dec due to frost preventing lime render application. Base coat applied Dec 5th, Top coat Jan 10th.',

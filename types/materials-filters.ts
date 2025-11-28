@@ -8,19 +8,24 @@ export type SortOption =
     | 'PRICE_DESC'
     | 'DISTANCE_ASC'
     | 'VOLUME_DESC'
-    | 'VOLUME_ASC';
+    | 'VOLUME_ASC'
+    | 'AGE_DESC' | 'AGE_ASC'
+    | 'CIRCULARITY_DESC'
+    | 'THERMAL_ASC'
 
 
-export type DisplayMode = 'card' | 'thumbnail'; // NEW
+export type DisplayMode = 'card' | 'thumbnail';
 
 export type DashboardViewMode = 'BANK' | 'PLANNING';
 
 export interface MaterialFilterState {
     search: string;
-    classification: Classification | 'ALL';
+    classification: string[]
+    endOfLife: string[]
     health: 'ALL' | 'Red_List_Free' | 'Contains_VOCs';
     sort: SortOption;
-    mode: DisplayMode; // NEW
+    mode: DisplayMode;
     origin: 'ALL' | 'NEW' | 'EXISTING';
     usage: 'ALL' | 'USED';
+    onlyLocal: boolean
 }

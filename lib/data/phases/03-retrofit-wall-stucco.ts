@@ -186,7 +186,7 @@ export const retrofitStuccoLifecycle: AssetLifecycle = {
             stage: '5_Construction',
             contractor: 'Material Cultures',
             status: 'COMPLETED',
-            dates: { start: '2025-11-15', end: '2025-12-20' },
+            dates: { start: '2025-10-15', end: '2025-11-19' },
             completionPercentage: 100,
             linkedEventIds: ['event-stucco-strip'],
             notes: 'Ty-Mawr hemp plaster applied in 2 coats (Base + Top). Drying time 4 weeks.'
@@ -194,7 +194,7 @@ export const retrofitStuccoLifecycle: AssetLifecycle = {
         {
             stage: '6_Handover',
             status: 'ACTIVE',
-            dates: { start: '2025-12-21' },
+            dates: { start: '2025-11-21' },
             linkedEventIds: ['event-stucco-strip'],
             notes: 'Ty-Mawr hemp plaster applied in 2 coats (Base + Top). Drying time 4 weeks.'
         }

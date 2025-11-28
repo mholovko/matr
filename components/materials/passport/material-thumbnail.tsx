@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { EnrichedMaterialPassport, Classification } from '@/types/material-passport';
-import { Factory, Leaf, DollarSign, MapPin, Tractor, Truck, Box } from 'lucide-react';
+import { Factory, Leaf, DollarSign, MapPin, Tractor, Truck, Box, CalendarClock, Thermometer, Recycle } from 'lucide-react'; // Added CalendarClock
 import { SortOption } from '@/types/materials-filters';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -37,20 +37,78 @@ export const MaterialThumbnail = memo(({ material, sortBy }: ThumbnailProps) => 
     const setMaterialFilter = useAppStore(state => state.setMaterialFilter);
 
     const getPrimaryMetric = () => {
+        // 1. AGE (Bank Mode)
+        if (sortBy.includes('AGE') && material.age) {
+            return {
+                icon: CalendarClock,
+                value: material.age.label.split(' ')[0],
+                unit: ' ' + material.age.label.split(' ')[1],
+                prefix: ''
+            };
+        }
+
+        // 2. CIRCULARITY (Detachability)
+        if (sortBy.includes('CIRCULARITY')) {
+            return {
+                icon: Recycle,
+                // Display as decimal index (0.0 - 1.0)
+                value: material.circularity.detachabilityIndex.toFixed(1),
+                unit: ' Idx', // "Index"
+                prefix: ''
+            };
+        }
+
+        // 3. THERMAL (Conductivity)
+        if (sortBy.includes('THERMAL')) {
+            return {
+                icon: Thermometer,
+                value: material.physics.thermalConductivity.toFixed(2),
+                unit: ' W/mK',
+                prefix: ''
+            };
+        }
+
+        // 4. PRICE
         if (sortBy.includes('PRICE')) {
             const price = 'unitRate' in material.matrixMetrics.financialCost
                 ? material.matrixMetrics.financialCost.unitRate
                 : material.matrixMetrics.financialCost.repairCost;
-            return { icon: DollarSign, value: price > 0 ? price.toFixed(2) : '-', unit: '', prefix: '£' };
+            return {
+                icon: DollarSign,
+                value: price > 0 ? price.toFixed(2) : '-',
+                unit: '',
+                prefix: '£'
+            };
         }
+
+        // 5. DISTANCE
         if (sortBy.includes('DISTANCE')) {
-            return { icon: MapPin, value: material.matrixMetrics.provenance.distanceToSiteMiles, unit: 'mi', prefix: '' };
+            return {
+                icon: MapPin,
+                value: material.matrixMetrics.provenance.distanceToSiteMiles,
+                unit: ' mi',
+                prefix: ''
+            };
         }
+
+        // 6. VOLUME
         if (sortBy.includes('VOLUME')) {
-            return { icon: Box, value: material.volume.toFixed(2), unit: ' m³', prefix: '' };
+            return {
+                icon: Box,
+                value: material.volume.toFixed(2),
+                unit: ' m³',
+                prefix: ''
+            };
         }
+
+        // DEFAULT: CARBON
         const netCarbon = (material.matrixMetrics.embodiedCarbon.totalEmbodied + material.matrixMetrics.embodiedCarbon.biogenicStorage).toFixed(2);
-        return { icon: Leaf, value: netCarbon, unit: ' kgCO₂e', prefix: '' };
+        return {
+            icon: Leaf,
+            value: netCarbon,
+            unit: ' kgCO₂e',
+            prefix: ''
+        };
     };
 
     const metric = getPrimaryMetric();

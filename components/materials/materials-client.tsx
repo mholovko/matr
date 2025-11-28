@@ -1,47 +1,60 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { MaterialsGrid } from "@/components/materials/passport/materials-grid"
 import { MaterialsDashboard } from "@/components/materials/passport/materials-dashboard"
 import { combinedMaterials } from '@/lib/data/materials'
 import { MaterialFilterState, DashboardViewMode } from "@/types/materials-filters"
-
 import { useAppStore } from "@/lib/store"
-import { EnrichedMaterialPassport } from "@/types/material-passport"
 import { aggregateMaterials } from "@/lib/circular/material-aggregator"
-import { useEffect } from "react"
-import { phasesOrder } from "@/lib/data/phases"
+import { phasesOrder, lifecycleMap } from "@/lib/data/phases"
 import { buildPhaseDataTree } from "@/lib/filters/phase-map"
 
-
-
+const getAgeData = (dateStr?: string) => {
+    if (!dateStr) return { ms: 0, label: 'N/A' }
+    const start = new Date(dateStr).getTime()
+    const now = new Date().getTime()
+    const diff = now - start
+    if (diff < 0) return { ms: diff, label: 'Planned' }
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const years = Math.floor(days / 365.25)
+    return { ms: diff, label: years > 0 ? `${years} Year${years > 1 ? 's' : ''}` : `${days} Days` }
+}
 
 export function MaterialsClient() {
     const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
     const [viewMode, setViewMode] = useState<DashboardViewMode>('BANK')
 
-
     const modelElements = useAppStore(state => state.modelElements)
     const { phases, setPhaseDataTree, getFilteredElementIds } = useAppStore()
 
-
-
+    // Default Sort is VOLUME (because default view is Bank)
     const [filters, setFilters] = useState<MaterialFilterState>({
         search: '',
-        classification: 'ALL',
+        classification: [],
+        endOfLife: [],
         health: 'ALL',
-        sort: 'CARBON_ASC',
-        mode: 'thumbnail',
         origin: 'ALL',
+        onlyLocal: false,
+        sort: 'VOLUME_DESC',
+        mode: 'thumbnail',
         usage: 'ALL'
     })
 
+    const handleModeChange = (mode: DashboardViewMode) => {
+        setViewMode(mode)
+
+        // Context-aware Default Sorting
+        setFilters(prev => ({
+            ...prev,
+            sort: mode === 'PLANNING' ? 'CARBON_ASC' : 'VOLUME_DESC'
+        }))
+    }
 
     const handleFilterChange = (updates: Partial<MaterialFilterState>) => {
         setFilters(prev => ({ ...prev, ...updates }))
     }
 
-    // Initialize Phase Data if missing
     useEffect(() => {
         if (modelElements.length > 0 && !phases.dataTree) {
             const tree = buildPhaseDataTree(modelElements, phasesOrder)
@@ -50,23 +63,13 @@ export function MaterialsClient() {
     }, [modelElements, phases.dataTree, setPhaseDataTree])
 
     const filteredMaterials = useMemo(() => {
-        // 1. Calculate Aggregated Volumes from Model Elements
-        // We use the same logic as the Circular Dashboard to ensure consistency
-
-        // Get the working set of elements based on current phase (and other filters)
-        // We skip material filter because we want to show ALL materials available in the filtered set
         const activeElementIds = getFilteredElementIds({ skipMaterialFilter: true })
 
-        // If activeElementIds is null, it means "All Elements" (no filters active)
-        // If it's a Set, we filter modelElements
         const workingSet = activeElementIds
             ? modelElements.filter(el => activeElementIds.has(el.id))
             : modelElements
 
         const materialMap = aggregateMaterials(workingSet)
-
-        // 1b. Calculate Material Phases (Global Context - All Elements)
-        // We want to show all created phases where a material is used, regardless of current view
         const materialPhasesMap = new Map<string, Set<string>>()
 
         if (phases.dataTree) {
@@ -84,52 +87,47 @@ export function MaterialsClient() {
             })
         }
 
-
-        // 2. Enrich with Model Data
-        let result: EnrichedMaterialPassport[] = combinedMaterials.map(mat => {
-            // Match by Name (Exact match required as per Speckle data)
+        let result = combinedMaterials.map(mat => {
             const modelData = materialMap.get(mat.id)
             const phasesSet = materialPhasesMap.get(mat.id)
+
+            const sortedPhases = phasesSet
+                ? Array.from(phasesSet).sort((a, b) => phasesOrder.indexOf(a) - phasesOrder.indexOf(b))
+                : []
+
+            const earliestPhaseId = sortedPhases[0]
+            const phaseInfo = earliestPhaseId ? lifecycleMap[earliestPhaseId] : null
+            const constructionStage = phaseInfo?.history.find(h => h.stage === '5_Construction')
+            const dateRef = constructionStage?.dates.end || phaseInfo?.history[0]?.dates.end || phaseInfo?.history[0]?.dates.start
+            const ageData = getAgeData(dateRef)
 
             return {
                 ...mat,
                 isUsed: !!modelData,
                 volume: modelData ? modelData.volume : 0,
-                phases: phasesSet ? Array.from(phasesSet).sort((a, b) => phasesOrder.indexOf(a) - phasesOrder.indexOf(b)) : []
+                phases: sortedPhases,
+                age: {
+                    ms: sortedPhases.length > 0 ? ageData.ms : 0,
+                    label: sortedPhases.length > 0 ? ageData.label : '-'
+                }
             }
         })
 
-
-        // 2. Apply Filters
-
-        // Mode-Specific Logic
+        // --- FILTERING ---
         if (viewMode === 'BANK') {
-            // Bank Mode: Show only materials used in the model
             result = result.filter(m => m.isUsed)
-        } else {
-            // Planning Mode: Show all materials (potentially allow usage filter if needed, but usually we want everything)
-            // We can keep the usage filter active here if the user wants to drill down, 
-            // OR we can disable it. For now, let's respect the usage filter ONLY in Planning mode if set,
-            // but usually Planning implies "Library" view.
-            if (filters.usage !== "ALL") {
-                result = result.filter(m => filters.usage === 'USED' ? m.isUsed : true)
-            }
         }
 
+        if (filters.classification.length > 0) result = result.filter(m => filters.classification.includes(m.classification))
+        if (filters.endOfLife.length > 0) result = result.filter(m => filters.endOfLife.includes(m.circularity.endOfLifeStrategy))
+        if (filters.onlyLocal) result = result.filter(m => m.matrixMetrics.provenance.isEcoregional)
         if (filters.origin !== "ALL") {
             result = result.filter(m => {
-                const isExisting = 'auditData' in m; // ExistingMaterialPassport has auditData
+                const isExisting = 'auditData' in m;
                 return filters.origin === 'EXISTING' ? isExisting : !isExisting;
             })
         }
-
-
-        if (filters.classification !== "ALL") {
-            result = result.filter(m => m.classification === filters.classification)
-        }
-        if (filters.health !== "ALL") {
-            result = result.filter(m => m.circularity.materialHealth === filters.health)
-        }
+        if (filters.health !== "ALL") result = result.filter(m => m.circularity.materialHealth === filters.health)
         if (filters.search) {
             const q = filters.search.toLowerCase()
             result = result.filter(m =>
@@ -139,25 +137,25 @@ export function MaterialsClient() {
             )
         }
 
+        // --- SORTING ---
         result.sort((a, b) => {
-            const getPrice = (m: EnrichedMaterialPassport) => {
-                if ('unitRate' in m.matrixMetrics.financialCost) {
-                    return m.matrixMetrics.financialCost.unitRate;
-                }
-                return m.matrixMetrics.financialCost.repairCost; // Use repair cost for existing
+            const getPrice = (m: any) => {
+                if ('unitRate' in m.matrixMetrics.financialCost) return m.matrixMetrics.financialCost.unitRate;
+                return m.matrixMetrics.financialCost.repairCost;
             };
 
             switch (filters.sort) {
-                case 'PRICE_ASC':
-                    return getPrice(a) - getPrice(b)
-                case 'PRICE_DESC':
-                    return getPrice(b) - getPrice(a)
-                case 'DISTANCE_ASC':
-                    return a.matrixMetrics.provenance.distanceToSiteMiles - b.matrixMetrics.provenance.distanceToSiteMiles
-                case 'VOLUME_DESC':
-                    return b.volume - a.volume
-                case 'VOLUME_ASC':
-                    return a.volume - b.volume
+                // VOLUME IS NOW DEFAULT, ENSURE LOGIC IS ROBUST
+                case 'VOLUME_DESC': return b.volume - a.volume
+                case 'VOLUME_ASC': return a.volume - b.volume
+
+                case 'AGE_DESC': return b.age.ms - a.age.ms
+                case 'AGE_ASC': return a.age.ms - b.age.ms
+                case 'CIRCULARITY_DESC': return b.circularity.detachabilityIndex - a.circularity.detachabilityIndex
+                case 'THERMAL_ASC': return a.physics.thermalConductivity - b.physics.thermalConductivity
+                case 'PRICE_ASC': return getPrice(a) - getPrice(b)
+                case 'PRICE_DESC': return getPrice(b) - getPrice(a)
+                case 'DISTANCE_ASC': return a.matrixMetrics.provenance.distanceToSiteMiles - b.matrixMetrics.provenance.distanceToSiteMiles
                 case 'CARBON_DESC':
                     return (b.matrixMetrics.embodiedCarbon.totalEmbodied + b.matrixMetrics.embodiedCarbon.biogenicStorage) -
                         (a.matrixMetrics.embodiedCarbon.totalEmbodied + a.matrixMetrics.embodiedCarbon.biogenicStorage)
@@ -168,26 +166,17 @@ export function MaterialsClient() {
             }
         })
 
-
         return result
-        return result
-    }, [filters, modelElements, viewMode, phases.selectedPhase, getFilteredElementIds])
-
-
-
+    }, [filters, modelElements, viewMode, phases.selectedPhase, getFilteredElementIds, phases.dataTree])
 
     return (
         <div className="relative h-screen pt-20 overflow-hidden bg-gray-50">
-
-            {/* The Grid adapts to the panel state */}
             <MaterialsGrid
                 materials={filteredMaterials}
                 mode={filters.mode}
                 sortBy={filters.sort}
                 isPanelCollapsed={isPanelCollapsed}
             />
-
-            {/* The Dashboard controls its own width state via parent */}
             <MaterialsDashboard
                 filters={filters}
                 onFilterChange={handleFilterChange}
@@ -195,7 +184,7 @@ export function MaterialsClient() {
                 isCollapsed={isPanelCollapsed}
                 setIsCollapsed={setIsPanelCollapsed}
                 viewMode={viewMode}
-                setViewMode={setViewMode}
+                setViewMode={handleModeChange}
             />
         </div>
     )

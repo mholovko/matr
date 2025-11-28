@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, memo } from 'react';
-import { Factory, DollarSign, MapPin, Leaf, Info, ShieldCheck, AlertTriangle, Truck, Recycle, Undo2, LucideIcon, Tractor } from 'lucide-react';
+import { Factory, DollarSign, MapPin, Leaf, Info, ShieldCheck, AlertTriangle, Truck, Recycle, Undo2, LucideIcon, Tractor, CalendarClock } from 'lucide-react';
 import { EnrichedMaterialPassport } from '@/types/material-passport';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -133,6 +133,11 @@ export const MaterialCardCompact = memo(({ material }: { material: EnrichedMater
                             <CompactMetric icon={DollarSign} value={cost > 0 ? `${cost}` : '-'} unit=" GBP" />
                             <CompactMetric icon={MapPin} value={material.matrixMetrics.provenance.distanceToSiteMiles} unit=" mi" />
                             <CompactMetric icon={Leaf} value={netCarbon} unit=" kgCO₂e" />
+
+                            {/* Conditional Age Metric */}
+                            {material.age && material.age.ms > 0 && (
+                                <CompactMetric icon={CalendarClock} value={material.age.label} unit="" />
+                            )}
                         </div>
                     </div>
 
