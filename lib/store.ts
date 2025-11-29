@@ -5,6 +5,7 @@ import { RoomPerformanceData } from '@/lib/data/performance'
 import { PhaseDataTree } from '@/lib/data/phase-map'
 import { AssetLifecycle } from '@/types/lifecycle'
 import { lifecycleMap } from './data/phases'
+import { DashboardViewMode, MaterialFilterState } from '@/types/materials-filters'
 
 // ------------------------------------------------------------------
 // Types & Interfaces
@@ -37,6 +38,17 @@ interface ModelData {
     availableMaterials: { name: string; class: string; volume: number }[]
     availableGroups: string[]
     totalVolume: number
+}
+
+interface MaterialsUIState {
+    viewMode: DashboardViewMode // 'BANK' | 'PLANNING'
+    isPanelCollapsed: boolean
+
+    // Passport Database Filters
+    filters: MaterialFilterState
+
+    // Planning 
+    planningSelection: Record<string, number> // { [materialId]: volume }
 }
 
 interface AppState {
@@ -108,6 +120,8 @@ interface AppState {
     toggleLog: (isOpen: boolean) => void
     logActiveTab: 'materials' | 'carbon' | 'docs'
     setLogActiveTab: (tab: 'materials' | 'carbon' | 'docs') => void
+    materialsUI: MaterialsUIState
+
 
     // --- Domain Specific ---
     feedFilterType: 'all' | FeedEvent['type']
@@ -132,6 +146,17 @@ interface AppState {
 
     // --- Core Logic ---
     getFilteredElementIds: (options?: { skipSelectionFilters?: boolean; skipMaterialFilter?: boolean }) => Set<string> | null
+
+    // Actions
+    setMaterialViewMode: (mode: DashboardViewMode) => void
+    setMaterialPanelCollapsed: (collapsed: boolean) => void
+    updateMaterialFilters: (updates: Partial<MaterialFilterState>) => void
+    resetMaterialFilters: () => void
+
+    // Planning Actions
+    togglePlanningSelection: (id: string) => void
+    updatePlanningQuantity: (id: string, volume: number) => void
+    clearPlanningSelection: () => void
 }
 
 // ------------------------------------------------------------------
@@ -192,6 +217,22 @@ const matchesMaterial = (element: SpeckleObject, targetMaterials: string[]): boo
 
 export const useAppStore = create<AppState>((set, get) => ({
     // --- Initial State ---
+    materialsUI: {
+        viewMode: 'BANK',
+        isPanelCollapsed: false,
+        filters: {
+            search: '',
+            classification: [],
+            endOfLife: [],
+            health: 'ALL',
+            origin: 'ALL',
+            onlyLocal: false,
+            sort: 'VOLUME_DESC',
+            mode: 'thumbnail', // DisplayMode
+            usage: 'ALL'
+        },
+        planningSelection: {}
+    },
     selectedElementId: null,
     selectedElementData: null,
     selectedElementIds: [],
@@ -234,6 +275,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         colorCodingEnabled: true,
         lifecycleMap: lifecycleMap,
     },
+
+
 
     // --- Actions ---
 
@@ -516,5 +559,78 @@ export const useAppStore = create<AppState>((set, get) => ({
     // --- Highlights & UI Toggles ---
     setHighlights: (highlights) => set({ highlights }),
     clearHighlights: () => set({ highlights: { type: null, values: [] } }),
-    toggleLog: (isOpen) => set({ isLogOpen: isOpen })
+    toggleLog: (isOpen) => set({ isLogOpen: isOpen }),
+
+    // --- Materials UI Actions ---
+
+    setMaterialViewMode: (mode) => set((state) => ({
+        materialsUI: {
+            ...state.materialsUI,
+            viewMode: mode,
+            // Context-aware Default Sorting when switching modes
+            filters: {
+                ...state.materialsUI.filters,
+                sort: mode === 'PLANNING' ? 'CARBON_ASC' : 'VOLUME_DESC'
+            }
+        }
+    })),
+
+    setMaterialPanelCollapsed: (collapsed) => set((state) => ({
+        materialsUI: { ...state.materialsUI, isPanelCollapsed: collapsed }
+    })),
+
+    updateMaterialFilters: (updates) => set((state) => ({
+        materialsUI: {
+            ...state.materialsUI,
+            filters: { ...state.materialsUI.filters, ...updates }
+        }
+    })),
+
+    resetMaterialFilters: () => set((state) => ({
+        materialsUI: {
+            ...state.materialsUI,
+            filters: {
+                search: '',
+                classification: [],
+                endOfLife: [],
+                health: 'ALL',
+                origin: 'ALL',
+                onlyLocal: false,
+                sort: 'VOLUME_DESC',
+                mode: 'thumbnail',
+                usage: 'ALL'
+            }
+        }
+    })),
+
+    // --- Planning Calculator Actions ---
+
+    togglePlanningSelection: (id) => set((state) => {
+        const current = state.materialsUI.planningSelection
+        const next = { ...current }
+
+        if (next[id] !== undefined) {
+            delete next[id]
+        } else {
+            next[id] = 1.0 // Default volume
+        }
+
+        return {
+            materialsUI: { ...state.materialsUI, planningSelection: next }
+        }
+    }),
+
+    updatePlanningQuantity: (id, volume) => set((state) => ({
+        materialsUI: {
+            ...state.materialsUI,
+            planningSelection: {
+                ...state.materialsUI.planningSelection,
+                [id]: volume
+            }
+        }
+    })),
+
+    clearPlanningSelection: () => set((state) => ({
+        materialsUI: { ...state.materialsUI, planningSelection: {} }
+    }))
 }))
