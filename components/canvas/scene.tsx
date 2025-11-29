@@ -80,6 +80,8 @@ export function Scene({ modelType = 'elements', enableFiltering = true, enableSe
         >
             <ErrorBoundary>
                 <Canvas
+                    frameloop="demand"
+                    dpr={[1, 1.5]}
                     shadows
                     camera={{ position: [-10, 10, 10], fov: 45 }}
                     onPointerMissed={(e) => {
