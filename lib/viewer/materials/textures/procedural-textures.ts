@@ -1,5 +1,13 @@
 import * as THREE from 'three';
 
+
+interface TextureSet {
+    map: THREE.Texture;
+    roughnessMap?: THREE.Texture;
+    bumpMap?: THREE.Texture;
+    normalMap?: THREE.Texture;
+}
+
 /**
  * Helper to create a base canvas
  */
@@ -16,7 +24,7 @@ function createCanvas(size: number = 1024) {
  * Matches the layout of the provided photo but in a CAD style.
  * SEAMLESS FIX: Uses integer column counts to ensure perfect tiling.
  */
-export function generateReclaimedBrickTexture(): THREE.Texture {
+export function generateReclaimedBrickTextures(): TextureSet {
     const { canvas, ctx, size } = createCanvas(1024);
 
     // --- CONFIGURATION ---
@@ -107,10 +115,9 @@ export function generateReclaimedBrickTexture(): THREE.Texture {
 
     // Important: SRGB Encoding usually looks better for colors
 
-    return texture;
+    return { map: texture };
 }
 
-// ... (Keep existing generatePineFloorTexture)
 export function generatePineFloorTexture(): THREE.Texture {
     const { canvas, ctx, size } = createCanvas(512);
     ctx.fillStyle = '#fdf6e3';
@@ -138,7 +145,7 @@ export function generatePineFloorTexture(): THREE.Texture {
  * Pattern: Stretcher (Brick) + Header (Half Brick).
  * Offset: 50% of the total unit width.
  */
-export function generateRedRubberBrickTexture(): THREE.Texture {
+export function generateRedRubberBrickTextures(): THREE.Texture {
     const { canvas, ctx, size } = createCanvas(1024);
 
     // --- CONFIGURATION ---

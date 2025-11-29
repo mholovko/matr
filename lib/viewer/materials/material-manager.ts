@@ -1,10 +1,12 @@
 import * as THREE from 'three'
-import { generatePineFloorTexture, generateReclaimedBrickTexture, generateRedRubberBrickTexture } from './textures/procedural-textures'
+import { generatePineFloorTexture, generateReclaimedBrickTextures } from './textures/procedural-textures'
+import { generateRedRubberBrickTextures } from './textures/procedural-textures-realistic'
 
 
 export class MaterialManager {
     // Cache for procedural textures
-    private textureCache: Map<string, THREE.Texture> = new Map()
+    // Now stores an object with optional maps
+    private textureCache: Map<string, { map: THREE.Texture, roughnessMap?: THREE.Texture, bumpMap?: THREE.Texture, normalMap?: THREE.Texture }> = new Map()
 
     // Persistent standard materials (omitted implementation for brevity, same as your original code)
     private highlightMat: THREE.MeshStandardMaterial | null = null
@@ -26,27 +28,26 @@ export class MaterialManager {
             color: new THREE.Color(0xffffff) // Default white so textures show correctly
         }
 
-        let texture: THREE.Texture | undefined;
+        let textures: { map: THREE.Texture, roughnessMap?: THREE.Texture, bumpMap?: THREE.Texture, normalMap?: THREE.Texture } | undefined;
 
         // --- SPECIFIC MATERIAL LOGIC BASED ON ID ---
         switch (materialName) {
 
             case 'MATR_WOOD_PineFloor_Painted':
                 // Check cache
-                texture = this.textureCache.get(materialName);
-                if (!texture) {
-                    texture = generatePineFloorTexture();
-                    this.textureCache.set(materialName, texture);
+                textures = this.textureCache.get(materialName);
+                if (!textures) {
+                    const map = generatePineFloorTexture();
+                    textures = { map, bumpMap: map }; // Reuse map for bump
+                    this.textureCache.set(materialName, textures);
                 }
 
                 // Apply texture parameters
-                params.map = texture;
-                // Wood has grain, so use the texture as a subtle bump map
-                params.bumpMap = texture;
-                params.bumpScale = 0.015; // Subtle bump for grain/paint streaks
+                params.map = textures.map;
+                params.bumpMap = textures.bumpMap;
+                params.bumpScale = 0.015;
 
                 // Material properties based on description:
-                // "Painted/stained" -> Higher roughness, low metalness
                 params.roughness = 0.85;
                 params.metalness = 0.0;
                 break;
@@ -54,41 +55,44 @@ export class MaterialManager {
 
             case 'MATR_MASO_BrickSolid_ReclaimedRed':
                 // Check cache
-                texture = this.textureCache.get(materialName);
-                if (!texture) {
-                    texture = generateReclaimedBrickTexture();
-                    this.textureCache.set(materialName, texture);
+                textures = this.textureCache.get(materialName);
+                if (!textures) {
+                    textures = generateReclaimedBrickTextures();
+                    this.textureCache.set(materialName, textures);
                 }
 
                 // Apply texture parameters
-                params.map = texture;
-                // Brick is very rough, strong bump map needed
-                params.bumpMap = texture;
-                params.bumpScale = 0.08; // Strong bump for mortar joints and rough brick faces
+                params.map = textures.map;
+                params.roughnessMap = textures.roughnessMap;
+                params.bumpMap = textures.bumpMap;
+                params.normalMap = textures.normalMap;
 
-                // Material properties based on description:
-                // "Solid Brickwork", "Mortar erosion", "Fair condition" -> Very rough, matte
-                params.roughness = 0.98;
+                params.bumpScale = 0.02;
+                params.normalScale = new THREE.Vector2(1, 1);
+
+                // We rely on the roughness map now, so base roughness can be 1.0 (multiplied by map)
+                params.roughness = 1.0;
                 params.metalness = 0.0;
                 break;
 
             case 'MATR_MASO_BrickFace_RedRubber':
                 // Check cache
-                texture = this.textureCache.get(materialName);
-                if (!texture) {
-                    texture = generateRedRubberBrickTexture();
-                    this.textureCache.set(materialName, texture);
+                textures = this.textureCache.get(materialName);
+                if (!textures) {
+                    textures = generateRedRubberBrickTextures();
+                    this.textureCache.set(materialName, textures);
                 }
 
                 // Apply texture parameters
-                params.map = texture;
-                // Brick is very rough, strong bump map needed
-                params.bumpMap = texture;
-                params.bumpScale = 0.08; // Strong bump for mortar joints and rough brick faces
+                params.map = textures.map;
+                params.roughnessMap = textures.roughnessMap;
+                params.bumpMap = textures.bumpMap;
+                params.normalMap = textures.normalMap;
 
-                // Material properties based on description:
-                // "Solid Brickwork", "Mortar erosion", "Fair condition" -> Very rough, matte
-                params.roughness = 0.98;
+                params.bumpScale = 0.015; // Fine joints
+                params.normalScale = new THREE.Vector2(1, 1);
+
+                params.roughness = 1.0;
                 params.metalness = 0.0;
                 break;
 
@@ -113,6 +117,8 @@ export class MaterialManager {
         // IMPORTANT: Ensure textures are updated when first created
         if (material.map) material.map.needsUpdate = true;
         if (material.bumpMap) material.bumpMap.needsUpdate = true;
+        if (material.roughnessMap) material.roughnessMap.needsUpdate = true;
+        if (material.normalMap) material.normalMap.needsUpdate = true;
 
         return material
     }
