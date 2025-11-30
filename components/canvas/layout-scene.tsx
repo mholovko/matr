@@ -22,7 +22,7 @@ export function LayoutScene() {
     }, [])
 
     const modelType = pathname === '/performance' || pathname === '/photomatch' ? 'rooms' : 'elements'
-    const enableFiltering = pathname === '/' || pathname === '/inventory'
+    const enableFiltering = pathname === '/' || pathname === '/inventory' || pathname === '/retrofit'
     const enableSelection = pathname === '/' || pathname === '/inventory' || pathname === '/performance'
 
     // Calculate bottom offset based on drawer snap
