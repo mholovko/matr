@@ -21,7 +21,8 @@ export function buildPhaseDataTree(
       phaseId,
       created: new Set(),
       demolished: new Set(),
-      active: new Set()
+      active: new Set(),
+      existing: new Set()
     }
   })
 
@@ -77,6 +78,13 @@ export function buildPhaseDataTree(
 
     // Set cumulative active for this phase
     phaseData.active = new Set(cumulativeActive)
+
+    // Calculate existing (Context) = Active - Created
+    phaseData.active.forEach(id => {
+      if (!phaseData.created.has(id)) {
+        phaseData.existing.add(id)
+      }
+    })
   })
 
   return {

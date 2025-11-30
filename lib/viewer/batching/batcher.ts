@@ -13,6 +13,7 @@ export class Batcher {
     private filteredOutElements: Set<string> = new Set()
     private highlightedElements: Set<string> = new Set()
     private hoveredElements: Set<string> = new Set()
+    private raycastIgnoredElements: Set<string> = new Set()
     private phaseStatus: Map<string, 'created' | 'demolished' | 'existing'> = new Map()
 
     // Data Lookup
@@ -393,5 +394,13 @@ export class Batcher {
     public clearPhaseColors() {
         this.phaseStatus.clear()
         this.updateVisualState()
+    }
+
+    public setRaycastIgnore(ids: Set<string>) {
+        this.raycastIgnoredElements = ids
+    }
+
+    public isRaycastIgnored(id: string): boolean {
+        return this.raycastIgnoredElements.has(id)
     }
 }

@@ -40,7 +40,7 @@ export class BatchRaycaster {
 
                 // Each BatchObject knows its index range in the merged geometry
                 // Find which object contains this face (only returns if visible)
-                const batchObject = this.findBatchObjectByFaceIndex(batch.batchObjects, faceIndex as number)
+                const batchObject = this.findBatchObjectByFaceIndex(batch.batchObjects, faceIndex as number, batcher)
 
                 if (batchObject) {
                     if (!closestIntersection || intersection.distance < closestIntersection.distance) {
@@ -69,14 +69,15 @@ export class BatchRaycaster {
      * Find which BatchObject a face index belongs to
      * Only returns visible objects. Hidden objects are skipped.
      */
-    private findBatchObjectByFaceIndex(batchObjects: BatchObject[], faceIndex: number): BatchObject | null {
+    private findBatchObjectByFaceIndex(batchObjects: BatchObject[], faceIndex: number, batcher: Batcher): BatchObject | null {
         // Find the object whose face range contains this face index
         for (const obj of batchObjects) {
             if (faceIndex >= obj.startFaceIndex && faceIndex < obj.endFaceIndex) {
-                // Only return if visible
-                // If hidden, return null to skip this face (don't continue searching
-                // because ranges are non-overlapping and this face belongs to this hidden object)
-                return obj.visible ? obj : null
+                // Only return if visible AND not ignored
+                if (!obj.visible) return null
+                if (batcher.isRaycastIgnored(obj.elementId)) return null
+
+                return obj
             }
         }
         return null

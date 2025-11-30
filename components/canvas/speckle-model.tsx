@@ -173,8 +173,31 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
         const filteredIds = state.getFilteredElementIds()
         const isDollhouse = state.viewMode === 'dollhouse' && currentSectorRef.current.length > 0 && !state.selectedAssemblyId
 
+        // Special handling for 'context' mode:
+        // The store filters return ONLY 'created' elements (so dashboard counts are correct).
+        // But we want to VISUALLY show 'existing' elements too.
+        let finalVisibleIds = filteredIds
+        const raycastIgnoreSet = new Set<string>()
+
+        if (phases.filterMode === 'context' && phases.selectedPhase && phases.dataTree) {
+            const phaseData = phases.dataTree.elementsByPhase[phases.selectedPhase]
+            if (phaseData) {
+                // Start with the filtered IDs (which are just the 'created' ones that passed other filters)
+                const combined = new Set(filteredIds || [])
+
+                // Add ALL existing elements (Context)
+                phaseData.existing.forEach(id => {
+                    combined.add(id)
+                    // Existing elements should be ignored by raycaster (passthrough)
+                    raycastIgnoreSet.add(id)
+                })
+                finalVisibleIds = combined
+            }
+        }
+
         if (!isDollhouse) {
-            batcher.setFilter(filteredIds)
+            batcher.setFilter(finalVisibleIds)
+            batcher.setRaycastIgnore(raycastIgnoreSet)
             return
         }
 
@@ -183,7 +206,7 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
         Object.values(batcher.batches).forEach((batch: any) => {
             batch.batchObjects.forEach((obj: any) => {
-                if (filteredIds && !filteredIds.has(obj.elementId)) return
+                if (finalVisibleIds && !finalVisibleIds.has(obj.elementId)) return
 
                 const groupName = obj.properties?.groupName
                 let isHiddenByDollhouse = false
@@ -203,7 +226,8 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             })
         })
         batcher.setFilter(visibleSet)
-    }, [sceneGroup, filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, enableFiltering, searchTerm])
+        batcher.setRaycastIgnore(raycastIgnoreSet)
+    }, [sceneGroup, filters, phases.selectedPhase, phases.filterMode, viewMode, selectedAssemblyId, enableFiltering, searchTerm, phases.dataTree])
 
     useEffect(() => {
         applyFilters()
@@ -260,12 +284,28 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
             const statusMap = new Map<string, 'created' | 'demolished' | 'existing'>()
             phaseData.created.forEach(id => statusMap.set(id, 'created'))
             phaseData.demolished.forEach(id => statusMap.set(id, 'demolished'))
+
             phaseData.active.forEach(id => {
                 if (!phaseData.created.has(id)) {
                     statusMap.set(id, 'existing')
                 }
             })
             batcher.applyPhaseColors(statusMap)
+
+        } else if (phases.filterMode === 'context') {
+            const phaseData = phases.dataTree.elementsByPhase[phases.selectedPhase]
+            if (!phaseData) return
+
+            const statusMap = new Map<string, 'created' | 'demolished' | 'existing'>()
+
+            // In context mode:
+            // - Created elements: Skipped (render as normal materials)
+            // - Existing elements: Marked as 'existing' (render ghosted)
+            phaseData.existing.forEach(id => {
+                statusMap.set(id, 'existing')
+            })
+            batcher.applyPhaseColors(statusMap)
+
         } else {
             batcher.clearPhaseColors()
         }
@@ -303,6 +343,11 @@ export function SpeckleModel({ projectId, modelId, visible = true, renderBackFac
 
                 if (result) {
                     const { batchObject } = result
+
+                    // Context Mode Selection Guard REMOVED
+                    // The raycaster now ignores existing elements in context mode, so we don't need this check.
+                    // If we got a result, it must be a valid (non-ignored) element.
+
                     const groupName = batchObject.properties?.groupName
                     const { selectedAssemblyId, setSelectedAssembly } = useAppStore.getState()
 

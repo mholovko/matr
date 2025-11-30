@@ -16,6 +16,7 @@ export interface PhaseDataInPhase {
   created: Set<string> // Elements created in this phase
   demolished: Set<string> // Elements demolished in this phase
   active: Set<string> // Cumulative: all elements existing up to this phase (including all prior phases)
+  existing: Set<string> // Active elements MINUS created elements (Context)
 }
 
 export interface PhaseDataTree {

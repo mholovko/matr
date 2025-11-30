@@ -13,13 +13,14 @@ export function PhaseFilterTabs() {
   if (!phaseData) return null
 
   const tabs: Array<{
-    mode: 'diff' | 'complete' | 'new' | 'demolished'
+    mode: 'diff' | 'complete' | 'new' | 'demolished' | 'context'
     label: string
     count: number
     colorClass: string
   }> = [
       { mode: 'diff', label: 'Diff', count: phaseData.active.size + phaseData.demolished.size, colorClass: 'text-foreground' },
       { mode: 'complete', label: 'All', count: phaseData.active.size, colorClass: 'text-foreground' },
+      { mode: 'context', label: 'Context', count: phaseData.created.size, colorClass: 'text-blue-500' },
       { mode: 'new', label: 'New', count: phaseData.created.size, colorClass: 'text-green-600' },
       { mode: 'demolished', label: 'Demo', count: phaseData.demolished.size, colorClass: 'text-red-600' }
     ]

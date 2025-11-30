@@ -27,7 +27,7 @@ interface HighlightState {
 interface PhaseState {
     dataTree: PhaseDataTree | null
     selectedPhase: string | null
-    filterMode: 'complete' | 'new' | 'demolished' | 'diff'
+    filterMode: 'complete' | 'new' | 'demolished' | 'diff' | 'context'
     colorCodingEnabled: boolean
     lifecycleMap: Record<string, AssetLifecycle>
 }
@@ -141,7 +141,7 @@ interface AppState {
     phases: PhaseState
     setPhaseDataTree: (tree: PhaseDataTree | null) => void
     setSelectedPhase: (phase: string | null) => void
-    setPhaseFilterMode: (mode: 'complete' | 'new' | 'demolished' | 'diff') => void
+    setPhaseFilterMode: (mode: 'complete' | 'new' | 'demolished' | 'diff' | 'context') => void
     setPhaseColorCoding: (enabled: boolean) => void
 
     // --- Core Logic ---
@@ -172,7 +172,8 @@ const getAllowedPhaseIds = (phaseState: PhaseState): Set<string> | null => {
     if (!phaseData) return null
 
     switch (filterMode) {
-        case 'new': return phaseData.created
+        case 'new':
+        case 'context': return phaseData.created
         case 'demolished': return phaseData.demolished
         case 'complete':
         case 'diff':
