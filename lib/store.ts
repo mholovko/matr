@@ -144,6 +144,10 @@ interface AppState {
     setPhaseFilterMode: (mode: 'complete' | 'new' | 'demolished' | 'diff' | 'context') => void
     setPhaseColorCoding: (enabled: boolean) => void
 
+    // --- Photomatch ---
+    selectedPhotomatchCamera: string | null
+    setSelectedPhotomatchCamera: (id: string) => void
+
     // --- Core Logic ---
     getFilteredElementIds: (options?: { skipSelectionFilters?: boolean; skipMaterialFilter?: boolean }) => Set<string> | null
 
@@ -276,6 +280,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         colorCodingEnabled: true,
         lifecycleMap: lifecycleMap,
     },
+    selectedPhotomatchCamera: 'camera.001', // Default to first camera
 
 
 
@@ -321,6 +326,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     setSelectedPhase: (phase) => set((s) => ({ phases: { ...s.phases, selectedPhase: phase } })),
     setPhaseFilterMode: (mode) => set((s) => ({ phases: { ...s.phases, filterMode: mode } })),
     setPhaseColorCoding: (enabled) => set((s) => ({ phases: { ...s.phases, colorCodingEnabled: enabled } })),
+
+    // --- Photomatch Actions ---
+    setSelectedPhotomatchCamera: (id) => set({ selectedPhotomatchCamera: id }),
 
     // --- Selection Actions ---
     setSelectedElement: (id, data) => set({

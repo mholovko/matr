@@ -4,11 +4,13 @@ import { cameras } from "@/lib/data/photomatch"
 import { useMemo } from "react"
 import * as THREE from "three"
 import { useTexture } from "@react-three/drei"
-
 import { blenderToThreeQuaternion } from "@/lib/math"
+import { useAppStore } from "@/lib/store"
 
 export function PhotomatchCamera() {
-    const cameraData = cameras["camera.001"]
+    const selectedPhotomatchCamera = useAppStore((state) => state.selectedPhotomatchCamera)
+    const cameraKey = (selectedPhotomatchCamera || "camera.001") as keyof typeof cameras
+    const cameraData = cameras[cameraKey]
     const texture = useTexture(cameraData.referenceImage)
 
     const { position, quaternion } = useMemo(() => {
@@ -20,11 +22,21 @@ export function PhotomatchCamera() {
     }, [cameraData])
 
     const aspect = cameraData.camera.aspect
-    const distance = 2 // Distance from camera to image plate
+    const distance = .5 // Distance from camera to image plane
 
-    // Calculate height based on vertical FOV and distance
-    // h = 2 * d * tan(fov / 2)
-    const vFovRad = (cameraData.camera.fov * Math.PI) / 180
+    // Calculate vertical FOV based on sensor fit mode
+    let vFovRad: number
+    if (cameraData.camera.sensorFit === "VERTICAL") {
+        // FOV is already vertical, use directly
+        vFovRad = (cameraData.camera.fov * Math.PI) / 180
+    } else {
+        // FOV is horizontal, convert to vertical: vFov = 2 * atan(tan(hFov/2) / aspect)
+        const hFovRad = (cameraData.camera.fov * Math.PI) / 180
+        vFovRad = 2 * Math.atan(Math.tan(hFovRad / 2) / aspect)
+    }
+
+    // Calculate plane dimensions based on vertical FOV and distance
+    // h = 2 * d * tan(vFov / 2)
     const height = 2 * distance * Math.tan(vFovRad / 2)
     const width = height * aspect
 
@@ -32,7 +44,7 @@ export function PhotomatchCamera() {
         <group position={position} quaternion={quaternion}>
             <mesh position={[0, 0, -distance]}>
                 <planeGeometry args={[width, height]} />
-                <meshBasicMaterial map={texture} side={THREE.DoubleSide} transparent opacity={0.8} />
+                <meshBasicMaterial map={texture} side={THREE.DoubleSide} transparent opacity={1} />
             </mesh>
             <axesHelper args={[2]} />
         </group>

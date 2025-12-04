@@ -9,6 +9,7 @@ const pages = [
   { id: 'retrofit', label: 'Retrofit', path: '/retrofit' },
   { id: 'feed', label: 'Feed', path: '/feed' },
   { id: 'materials', label: 'Materials', path: '/materials' },
+  { id: 'photomatch', label: 'Photomatch', path: '/photomatch' },
 ] as const
 
 export function PageToggle() {
