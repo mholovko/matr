@@ -96,6 +96,17 @@ export class MaterialManager {
                 params.metalness = 0.0;
                 break;
 
+            case 'Transparent':
+                // Room material: solid white backface
+                // Ignore any transparency settings from render material proxy
+                params.color = new THREE.Color(0xFFFFFF);
+                params.side = THREE.BackSide;
+                params.transparent = false;
+                params.opacity = 1.0;
+                params.metalness = 0.0;
+                params.roughness = 1.0;
+                params.depthWrite = true;
+                break;
 
             // --- STANDARD/FALLBACK LOGIC ---
             default:
@@ -108,7 +119,10 @@ export class MaterialManager {
 
 
         // --- SHARED PROPERTIES ---
-        this.applyTransparency(params, materialProps)
+        // Skip transparency for Transparent material (handled explicitly in case above)
+        if (materialName !== 'Transparent') {
+            this.applyTransparency(params, materialProps);
+        }
         this.applyEmissive(params, materialProps)
 
         const material = new THREE.MeshStandardMaterial(params)
